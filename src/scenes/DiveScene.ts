@@ -101,6 +101,8 @@ export class DiveScene extends Phaser.Scene {
   private hud!: Phaser.GameObjects.Graphics;
   private label!: ReturnType<typeof shadowTxt>;
   private labelTimer = 0;
+  private syncLabel!: ReturnType<typeof shadowTxt>;
+  private syncLabelTimer = 0;
   private bigText!: Phaser.GameObjects.BitmapText;
   private bigShadow!: Phaser.GameObjects.BitmapText;
   private bigTimer = 0;
@@ -169,6 +171,8 @@ export class DiveScene extends Phaser.Scene {
     this.label.setDepth(210);
     this.bigShadow = this.add.bitmapText(WIDTH / 2 + 1, 61, FONT, '', 16).setOrigin(0.5, 0).setScrollFactor(0).setDepth(210).setTint(col(C.black));
     this.bigText = this.add.bitmapText(WIDTH / 2, 60, FONT, '', 16).setOrigin(0.5, 0).setScrollFactor(0).setDepth(211).setTint(col(C.gold));
+    this.syncLabel = shadowTxt(this, WIDTH - 4, HEIGHT - 26, '', C.gold, 'right');
+    this.syncLabel.setDepth(225);
     this.info = shadowTxt(this, 4, HEIGHT - 12, '', C.white);
     this.info.setDepth(210);
     this.autoBot = /[?&]autoplay\b/.test(location.search) && !cfg.replay ? new Bot(PERFECT_BOT) : null;
@@ -530,8 +534,30 @@ export class DiveScene extends Phaser.Scene {
     audio.play(name, isPlayer ? vol : vol * 0.45);
   }
 
+  /** timing feedback against the partner's cue of the same kind */
+  private syncFeedback(e: SimEvent): void {
+    if (!this.partnerPlan || this.cfg.tv) return;
+    const kindOf: Partial<Record<SimEvent['type'], Cue['kind']>> = { release: 'jump', tuck: 'tuck', pike: 'pike', open: 'open', rip: 'rip' };
+    const kind = kindOf[e.type];
+    if (!kind) return;
+    let best: Cue | null = null;
+    for (const c of this.partnerPlan.cues) {
+      if (c.kind === kind && (!best || Math.abs(c.t - e.t) < Math.abs(best.t - e.t))) best = c;
+    }
+    if (!best || Math.abs(best.t - e.t) > 0.6) return;
+    const ms = Math.round((e.t - best.t) * 1000);
+    const a = Math.abs(ms);
+    const label = a <= 40 ? 'PERFECT' : a <= 90 ? 'GOOD' : ms < 0 ? 'EARLY' : 'LATE';
+    const c = label === 'PERFECT' ? C.gold : label === 'GOOD' ? C.lime : C.salmon;
+    this.syncLabel.set(`${label} ${ms > 0 ? '+' : ''}${ms}ms`);
+    this.syncLabel.main.setTint(col(c));
+    this.syncLabelTimer = 1.2;
+    if (label === 'PERFECT') audio.play('good', 0.4, 1.5);
+  }
+
   private onEvent(d: Diver, e: SimEvent, isPlayer: boolean): void {
     const inp = input();
+    if (isPlayer) this.syncFeedback(e);
     const labelColor = (l?: string) => (l === 'PERFECT' ? C.gold : l === 'GOOD' ? C.lime : C.salmon);
     switch (e.type) {
       case 'charge':
@@ -677,6 +703,10 @@ export class DiveScene extends Phaser.Scene {
     if (this.labelTimer > 0) {
       this.labelTimer -= dt;
       if (this.labelTimer <= 0) this.label.set('');
+    }
+    if (this.syncLabelTimer > 0) {
+      this.syncLabelTimer -= dt;
+      if (this.syncLabelTimer <= 0) this.syncLabel.set('');
     }
     if (this.bigTimer > 0) {
       this.bigTimer -= dt;
