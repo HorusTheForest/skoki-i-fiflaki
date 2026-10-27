@@ -67,3 +67,29 @@ test('synchro dive with the AI partner reaches the 11-judge results', async ({ p
   expect(n).toBe(11);
   expect(errors).toEqual([]);
 });
+
+test('campaign level 1 is passed, saved and unlocks level 2', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('./?autoplay');
+  await page.evaluate(() => localStorage.clear());
+  await activeScene(page, 'Menu');
+  await page.keyboard.press('Space');
+  await activeScene(page, 'Levels');
+  await page.keyboard.press('Space');
+  await activeScene(page, 'Dive');
+  await activeScene(page, 'Results', 30_000);
+  const outcome = await page.evaluate(() => {
+    const r = (window as GameWindow).__game!.scene.getScene('Results') as unknown as { res: { outcome?: { passed: boolean; stars: number } | null } };
+    return r.res.outcome;
+  });
+  expect(outcome?.passed).toBe(true);
+  expect(outcome?.stars).toBeGreaterThan(0);
+  const saved = await page.evaluate(() => Object.values(localStorage).join(''));
+  expect(saved).toContain('"1":{"stars"');
+  // "POZIOM 2" is the first entry of the results menu
+  await page.keyboard.press('Space');
+  await activeScene(page, 'Dive');
+  const id = await page.evaluate(() => ((window as GameWindow).__game!.scene.getScene('Dive') as unknown as { cfg: { levelId: number } }).cfg.levelId);
+  expect(id).toBe(2);
+  expect(errors).toEqual([]);
+});

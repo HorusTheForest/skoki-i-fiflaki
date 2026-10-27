@@ -6,13 +6,14 @@ import { HEIGHT, WIDTH } from '../config';
 import type { DiveConfig } from './DiveScene';
 import type { Award, DiveRecord, Execution, IndividualScore, SyncResult, SynchroScore } from '../scoring/judges';
 import { DD_IS_APPROXIMATE } from '../scoring/dd';
-import { replayUrl, type ReplayData } from '../core/replay';
+import { encodeReplay, replayUrl, type ReplayData } from '../core/replay';
 import { getSave, save } from '../core/save';
 import { C, col } from '../render/palette';
 import { panel, txt } from '../ui/text';
 import { Menu, type MenuItem } from '../ui/menu';
 import { audio } from '../audio/engine';
-import { onLevelResult, type LevelOutcome } from '../levels/progress';
+import { onLevelResult, startLevel, type LevelOutcome } from '../levels/progress';
+import { isFinal, level } from '../levels/levels';
 
 export interface DiveResult {
   cfg: DiveConfig;
@@ -42,7 +43,7 @@ export class ResultsScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(col(C.navy));
     const total = r.synchro ? r.synchro.score.total : r.solo!.score.total;
     if (r.outcome === undefined) {
-      r.outcome = onLevelResult(r, total);
+      r.outcome = onLevelResult(r, total, this);
       this.saveRecords(total);
     }
 
@@ -99,7 +100,10 @@ export class ResultsScene extends Phaser.Scene {
 
     const items: MenuItem[] = [];
     if (o?.next) items.push({ label: o.nextLabel ?? 'DALEJ', onSelect: () => o.next!() });
-    items.push({ label: 'JESZCZE RAZ', onSelect: () => this.scene.start('Dive', { ...r.cfg, seed: r.cfg.seed + 1 }) });
+    // a final has no retries of single rounds: it starts over
+    const final = r.cfg.mode === 'level' && r.cfg.levelId !== undefined && isFinal(level(r.cfg.levelId));
+    if (!final) items.push({ label: 'JESZCZE RAZ', onSelect: () => this.scene.start('Dive', { ...r.cfg, seed: r.cfg.seed + 1 }) });
+    else if (o?.nextLabel !== 'FINAŁ OD NOWA') items.push({ label: 'FINAŁ OD NOWA', onSelect: () => startLevel(this, r.cfg.levelId!) });
     items.push({
       label: 'POWTÓRKA TV',
       onSelect: () =>
@@ -127,10 +131,8 @@ export class ResultsScene extends Phaser.Scene {
     const s = getSave();
     if (!r.cfg.synchro && total > (s.records[key] ?? -1)) {
       s.records[key] = total;
-      import('../core/replay').then(({ encodeReplay }) => {
-        s.ghosts[key] = encodeReplay(r.replay);
-        save(s);
-      });
+      s.ghosts[key] = encodeReplay(r.replay);
+      save(s);
     }
   }
 

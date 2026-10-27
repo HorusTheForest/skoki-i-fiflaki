@@ -27,9 +27,10 @@ import { audio, type Sfx } from '../audio/engine';
 import { partnerById, planPartnerDive, type Cue, type PartnerDive } from '../ai/partner';
 import { hashSeed } from '../core/rng';
 import { Bot, PERFECT_BOT } from '../ai/bot';
-import { type ReplayData } from '../core/replay';
+import { decodeReplay, type ReplayData } from '../core/replay';
 import { shadowTxt, txt } from '../ui/text';
 import { FREESTYLE_DIVES } from '../levels/freestyle';
+import { level, type Modifier } from '../levels/levels';
 import { TvOverlay } from '../ui/tv';
 import type { DiveResult } from './ResultsScene';
 
@@ -55,7 +56,7 @@ export interface DiveConfig {
   /** freestyle: allow changing the dive on the platform */
   choose?: boolean;
   /** modifiers from the level data */
-  modifiers?: string[];
+  modifiers?: Modifier[];
 }
 
 const BACK: Plane = { s: 0.85, ox: (1 - 0.85) * (WIDTH / 2) + 10, oy: (1 - 0.85) * (HEIGHT / 2) - 22 };
@@ -106,7 +107,7 @@ export class DiveScene extends Phaser.Scene {
   private bigText!: Phaser.GameObjects.BitmapText;
   private bigShadow!: Phaser.GameObjects.BitmapText;
   private bigTimer = 0;
-  private card: ReturnType<typeof shadowTxt>[] = [];
+  private card: { destroy(): void }[] = [];
   private info!: ReturnType<typeof shadowTxt>;
   private ribbonIcons: { cue: Cue; box: Phaser.GameObjects.BitmapText }[] = [];
   private countIndex = 0;
@@ -148,8 +149,13 @@ export class DiveScene extends Phaser.Scene {
     this.camZoom = 2;
   }
 
+  private has(m: Modifier): boolean {
+    return this.cfg.modifiers?.includes(m) ?? false;
+  }
+
   private get assistOn(): boolean {
     if (this.cfg.replay) return this.cfg.replay.assist;
+    if (this.has('noAssist')) return false;
     const s = settings();
     return s.assist && !s.pro;
   }
@@ -179,7 +185,7 @@ export class DiveScene extends Phaser.Scene {
     this.buildDivers();
     this.showCard();
     if (cfg.tv) this.tv = new TvOverlay(this, cfg.replay?.score);
-    this.arena.setBoard(this.dive.code, cfg.synchro ? 'SYNCHRO' : `${cfg.height} M`, '');
+    this.arena.setBoard(this.dive.code, cfg.synchro ? 'SYNCHRO' : `${cfg.height} M`, cfg.levelId !== undefined ? `POZIOM ${cfg.levelId}` : '');
     // HUD gets its own camera so the world zoom does not scale it
     this.uiCam = this.cameras.add(0, 0, WIDTH, HEIGHT);
     this.uiCam.setRoundPixels(true);
@@ -263,18 +269,16 @@ export class DiveScene extends Phaser.Scene {
     this.ghost = null;
     const raw = getSave().ghosts[this.ghostKey()];
     if (!raw) return;
-    import('../core/replay').then(({ decodeReplay }) => {
-      try {
-        const r = decodeReplay(raw);
-        if (r.code !== this.dive.code || this.stage !== 'intro') return;
-        const view = new DiverView(this, { outfit: 5, hair: C.slate, skin: 0 }, 45, FRONT, { outline: false, underDepth: 74 });
-        view.silhouetteColor = C.slate;
-        const setup: DiveSetup = { ...this.makeSetup(this.dive), assist: r.assist, zoneWidth: r.zone };
-        this.ghost = this.newDiver(setup, view, FRONT, 'front', r.inputs);
-      } catch {
-        // ignore broken ghosts
-      }
-    });
+    try {
+      const r = decodeReplay(raw);
+      if (r.code !== this.dive.code || this.stage !== 'intro') return;
+      const view = new DiverView(this, { outfit: 5, hair: C.slate, skin: 0 }, 45, FRONT, { outline: false, underDepth: 74 });
+      view.silhouetteColor = C.slate;
+      const setup: DiveSetup = { ...this.makeSetup(this.dive), assist: r.assist, zoneWidth: r.zone };
+      this.ghost = this.newDiver(setup, view, FRONT, 'front', r.inputs);
+    } catch {
+      // ignore broken ghosts
+    }
   }
 
   // ---------------------------------------------------------------- HUD bits
@@ -288,14 +292,36 @@ export class DiveScene extends Phaser.Scene {
       [`${d.code}  WT ${DD_IS_APPROXIMATE ? '≈' : ''}${dd.toFixed(1)}`, C.gold],
       [diveName(d), C.white],
     ];
-    if (this.cfg.synchro && this.cfg.mode !== 'replay') {
+    const isLevel = this.cfg.mode === 'level' && this.cfg.levelId !== undefined;
+    if (this.cfg.synchro && this.cfg.mode !== 'replay' && !(isLevel && this.stage === 'intro')) {
       const p = partnerById(this.cfg.partner ?? 'ola');
       lines.push([`Partner: ${p.name} (${p.country})`, C.sky]);
     }
-    if (this.cfg.choose && this.stage === 'intro') lines.push(['←→ grupa  ↑↓ skok  AKCJA start', C.lightGrey]);
+    if (isLevel && this.stage === 'intro') {
+      const l = level(this.cfg.levelId!);
+      const n = l.dives.length;
+      lines.unshift([`POZIOM ${l.id}: ${l.name.toUpperCase()}${n > 1 ? `  SERIA ${(this.cfg.round ?? 0) + 1}/${n}` : ''}`, C.lime]);
+      let line = '';
+      for (const w of l.tip.split(' ')) {
+        if ((line + ' ' + w).trim().length > 38) {
+          lines.push([line, C.paleYellow]);
+          line = w;
+        } else line = (line + ' ' + w).trim();
+      }
+      if (line) lines.push([line, C.paleYellow]);
+    } else if (this.cfg.choose && this.stage === 'intro') lines.push(['←→ grupa  ↑↓ skok  AKCJA start', C.lightGrey]);
     else if (this.cfg.mode !== 'replay' && this.stage === 'intro') lines.push([this.cfg.synchro ? 'Trzymaj AKCJĘ na 3-2-1, puść na HEP!' : 'Trzymaj AKCJĘ, puść w złotej strefie', C.lightGrey]);
+    // on the platform the card sits low, on a dark band, clear of the divers
+    const intro = this.stage === 'intro' && this.cfg.mode !== 'replay';
+    const y0 = intro ? HEIGHT - 20 - lines.length * 10 : 4;
+    if (intro) {
+      const bg = this.add.graphics().setScrollFactor(0).setDepth(204);
+      bg.fillStyle(col(C.black), 0.6);
+      bg.fillRect(0, y0 - 3, Math.max(...lines.map(([t]) => t.length)) * 8 + 8, lines.length * 10 + 4);
+      this.card.push(bg);
+    }
     lines.forEach(([s, c], i) => {
-      const t = shadowTxt(this, 4, 4 + i * 10, s, c);
+      const t = shadowTxt(this, 4, y0 + i * 10, s, c);
       t.setDepth(205);
       this.card.push(t);
     });
@@ -679,7 +705,7 @@ export class DiveScene extends Phaser.Scene {
     }
     // entry line
     const st2 = settings();
-    if (showAids && s.lineVisible && st2.entryLine && !st2.pro) {
+    if (showAids && s.lineVisible && st2.entryLine && !st2.pro && !this.has('noLine')) {
       const err = s.predictEntryError();
       let colr: number = C.lightGrey;
       if (Math.abs(err) <= LINE_GREEN_DEG) colr = C.lime;
@@ -732,7 +758,8 @@ export class DiveScene extends Phaser.Scene {
       const now = this.stage === 'intro' ? 0 : this.player.sim.t + this.acc;
       for (const ic of this.ribbonIcons) {
         const x = RIBBON_HIT_X + (ic.cue.t - now) * RIBBON_SPEED;
-        ic.box.setVisible(x > RIBBON_HIT_X - 24 && x < WIDTH + 8);
+        const far = this.has('shortRibbon') ? RIBBON_HIT_X + 0.5 * RIBBON_SPEED : WIDTH + 8;
+        ic.box.setVisible(x > RIBBON_HIT_X - 24 && x < far);
         ic.box.setX(Math.round(x));
       }
     }
