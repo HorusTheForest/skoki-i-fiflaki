@@ -52,6 +52,7 @@ export class MenuScene extends Phaser.Scene {
       choose: true,
     });
     const items: MenuItem[] = [
+      { label: 'ODBICIE (PROTOTYP)', onSelect: () => this.scene.start('Bounce'), hint: 'Seria odbić z trampoliny, kombo zabierasz skokiem do basenu' },
       { label: 'KAMPANIA SYNCHRO', onSelect: () => this.scene.start('Levels'), hint: '50 poziomów z partnerem AI' },
       {
         label: () => `FREESTYLE  ${this.height === 7.5 ? '7½' : this.height} M`,
