@@ -52,7 +52,7 @@ export class MenuScene extends Phaser.Scene {
       choose: true,
     });
     const items: MenuItem[] = [
-      { label: 'KLIF (PROTOTYP)', onSelect: () => this.scene.start('Cliff'), hint: 'Spadanie przez kanion: bramki, skały, ptaki, czyste wejście' },
+      { label: 'NIESKOŃCZONA WIEŻA (PROTOTYP)', onSelect: () => this.scene.start('Fall'), hint: 'Para synchro spada z wieży bez końca: ↑ przełącza skoczka, bramki w kolorach' },
       { label: 'KAMPANIA SYNCHRO', onSelect: () => this.scene.start('Levels'), hint: '50 poziomów z partnerem AI' },
       {
         label: () => `FREESTYLE  ${this.height === 7.5 ? '7½' : this.height} M`,

@@ -112,17 +112,17 @@ test('campaign level 1 is passed, saved and unlocks level 2', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
-test('the Klif prototype starts and falls', async ({ page }) => {
+test('the infinite tower prototype jumps and falls', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('./');
   await activeScene(page, 'Menu');
   await page.keyboard.press('Space');
-  await activeScene(page, 'Cliff');
+  await activeScene(page, 'Fall');
   await page.keyboard.press('Space');
   type Sim = { sim: { level: { depth: number }; y: number } };
   await page.waitForFunction(
     () => {
-      const s = ((window as GameWindow).__game!.scene.getScene('Cliff') as unknown as Sim).sim;
+      const s = ((window as GameWindow).__game!.scene.getScene('Fall') as unknown as Sim).sim;
       return s.y < s.level.depth - 5;
     },
     undefined,
