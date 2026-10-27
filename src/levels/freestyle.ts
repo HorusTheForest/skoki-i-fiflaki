@@ -1,0 +1,20 @@
+// Dives offered in freestyle (←/→ on the platform switches the rotation group).
+export const FREESTYLE_DIVES = [
+  '101C',
+  '101B',
+  '102C',
+  '103C',
+  '103B',
+  '104C',
+  '105C',
+  '105B',
+  '106B',
+  '107C',
+  '107B',
+  '109C',
+  '5132D',
+  '5152B',
+  '5154B',
+  '5253B',
+  '5255B',
+];

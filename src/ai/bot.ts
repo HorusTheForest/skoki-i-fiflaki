@@ -106,7 +106,7 @@ export class Bot {
       if (
         this.twistsTapped < d.halfTwists &&
         sim.t - this.openedT >= this.p.twistDelay &&
-        sim.tick - this.lastTap >= 2
+        sim.tick - this.lastTap >= 12
       ) {
         input |= IN.UP;
         this.twistsTapped++;
