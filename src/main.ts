@@ -7,7 +7,7 @@ import { ResultsScene } from './scenes/ResultsScene';
 import { LevelsScene } from './scenes/LevelsScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { LockerScene } from './scenes/LockerScene';
-import { BounceScene } from './scenes/BounceScene';
+import { CliffScene } from './scenes/CliffScene';
 import { initInput } from './core/input';
 import { load } from './core/save';
 import { audio } from './audio/engine';
@@ -37,7 +37,7 @@ const game = new Phaser.Game({
   input: { keyboard: false, mouse: true, touch: true, gamepad: false },
   audio: { noAudio: true },
   fps: { target: 60 },
-  scene: [BootScene, MenuScene, DiveScene, ResultsScene, LevelsScene, SettingsScene, LockerScene, BounceScene],
+  scene: [BootScene, MenuScene, DiveScene, ResultsScene, LevelsScene, SettingsScene, LockerScene, CliffScene],
 });
 
 // The buffer follows the window (see viewFor): a whole number of *device*

@@ -48,7 +48,7 @@ Dotyk: lewa/prawa krawędź ekranu to ←/→, dół to AKCJA + ↓, szybkie prz
 
 ## Tryby
 
-- **Odbicie (prototyp)**: seria odbić z trampoliny obok basenu, 90 s na przejazd. Czyste lądowanie wybija wyżej, a wyżej znaczy więcej czasu na triki. Punkty zbierają się w kombo (każdy nowy rodzaj triku +0,5 do mnożnika, powtórzony trik połowa wartości) i przepadają przy upadku. Zabierasz je skokiem do basenu: rip podwaja wynik, płaskacz kasuje kombo. Sterowanie: ←/→ przy odbiciu nadaje obrót, AKCJA kuczka (+↓ łamana), ↑ pół śruby, AKCJA tuż przed lądowaniem to wbicie (PERFECT), ↓ przy odbiciu to skok do basenu. Linia przy zawodniku pokazuje, jak wyląduje, jeśli otworzy się teraz (zielona: otwieraj). Symulacja w `src/bounce/sim.ts`, punktacja w `src/bounce/score.ts`, wartości są robocze.
+- **Klif (prototyp)**: długie spadanie przez generowany kanion. ←/→ sterują, ↓ to nurkowanie (szybciej, punkty za metry ×2, gorzej się skręca), AKCJA to rozłożenie się (wolniej, łatwiej skręcić). Bramki budują serię (100 × seria), przelot tuż obok skały albo ptaka daje premię, uderzenie zabiera życie i połowę punktów z bieżącego skoku. Punkty zabierasz wejściem do wody: nurkowanie i prawie zerowa prędkość boczna to rip ×2, rozłożony albo bokiem to płaskacz. Trzy życia, każdy kolejny klif jest wyższy i węższy. Generator w `src/cliff/gen.ts`, symulacja w `src/cliff/sim.ts`, wartości są robocze.
 - **Kampania synchro**: 50 poziomów (`src/levels/levels.json`), co 10. poziom finał z kilkoma seriami i rywalami. 3 gwiazdki, odblokowania partnerów, strojów i aren.
 - **Freestyle**: dowolny skok, wybór wysokości platformy, rekordy i duch najlepszego skoku.
 - **Synchro trening**: dowolny skok z wybranym partnerem.
