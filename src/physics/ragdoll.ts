@@ -71,6 +71,11 @@ const RANGE: Record<keyof Joints, [number, number]> = {
   a: [0, 1.9],
 };
 
+/** water drag on a segment (1/m along and across it, 1/s linear) */
+const SEG_K_AXIAL = 0.4;
+const SEG_K_NORMAL = 7;
+const SEG_C = 1.5;
+
 export class Ragdoll {
   readonly world: World;
   private readonly bodies = new Map<SegName, Body>();
@@ -144,9 +149,22 @@ export class Ragdoll {
         const v = b.getLinearVelocity();
         const m = b.getMass();
         const depth = Math.min(1, -p.y / 0.15);
-        // buoyancy slightly above gravity, strong drag
-        b.applyForceToCenter(new Vec2(-v.x * m * 6, m * GRAVITY * 1.4 * depth - v.y * m * 6), true);
-        b.setAngularVelocity(b.getAngularVelocity() * 0.96);
+        // quadratic drag, much stronger across a segment than along it: a
+        // limb slicing in keeps going, a flat back stops almost at once
+        const a = -b.getAngle();
+        const ax = Math.sin(a);
+        const ay = Math.cos(a);
+        const va = v.x * ax + v.y * ay;
+        const vnx = v.x - va * ax;
+        const vny = v.y - va * ay;
+        const vn = Math.hypot(vnx, vny);
+        const fa = -SEG_K_AXIAL * Math.abs(va) * va - SEG_C * va;
+        const fn = -(SEG_K_NORMAL * vn + SEG_C);
+        const fx = (fa * ax + fn * vnx) * m * depth;
+        const fy = (fa * ay + fn * vny) * m * depth;
+        // buoyancy just above gravity: the body drifts up slowly
+        b.applyForceToCenter(new Vec2(fx, fy + m * GRAVITY * 1.08 * depth), true);
+        b.setAngularVelocity(b.getAngularVelocity() * 0.97);
       }
     }
     this.world.step(DT, 8, 3);

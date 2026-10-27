@@ -192,3 +192,27 @@ describe('entry', () => {
     expect(Math.abs(on)).toBeLessThan(Math.abs(off) - 3);
   });
 });
+
+describe('water entry', () => {
+  const plunge = (openBias: number) => {
+    const sim = new DiverSim(setup('105C'));
+    const bot = new Bot({ ...PERFECT_BOT, openBias });
+    let minY = Infinity;
+    while (sim.phase !== 'done') {
+      sim.step(bot.input(sim));
+      if (sim.phase === 'water') minY = Math.min(minY, sim.y);
+    }
+    return { minY, sim };
+  };
+
+  it('a clean entry plunges deep, a flat one stops near the surface', () => {
+    const clean = plunge(0);
+    const flat = plunge(40);
+    expect(clean.sim.entry!.flat).toBe(false);
+    expect(flat.sim.entry!.flat).toBe(true);
+    expect(clean.minY).toBeLessThan(-1.8);
+    expect(flat.minY).toBeGreaterThan(-1);
+    // and the body drifts back up only slowly afterwards
+    expect(clean.sim.y).toBeLessThan(-1);
+  });
+});
