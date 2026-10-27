@@ -28,6 +28,10 @@ export type Sfx =
 // ZzFX parameter lists (volume, randomness, frequency, attack, sustain, release,
 // shape, shapeCurve, slide, deltaSlide, pitchJump, pitchJumpTime, repeatTime,
 // noise, modulation, bitCrush, delay, sustainVolume, decay, tremolo, filter)
+/** crowd level at rest and its low-pass corner (Hz) */
+const CROWD_BASE = 0.12;
+const CROWD_F = 520;
+
 const SOUNDS: Record<Sfx, (number | undefined)[]> = {
   beep: [0.5, 0, 440, 0.005, 0.08, 0.05, 1],
   hep: [0.7, 0, 880, 0.005, 0.16, 0.1, 1, 1, 0, 0, 220, 0.06],
@@ -59,6 +63,7 @@ class AudioEngine {
   private crowdGain!: GainNode;
   private crowdFilter!: BiquadFilterNode;
   private cache = new Map<Sfx, AudioBuffer>();
+  private inArena = false;
 
   /** must be called from a user gesture */
   unlock(): void {
@@ -111,29 +116,54 @@ class AudioEngine {
     src.start();
   }
 
-  /** crowd murmur: looping white noise through a band-pass filter */
+  /**
+   * Crowd murmur: a long loop of low-passed brown noise with a slow,
+   * irregular swell. Silent outside the arena (see `arena`); the loop seam is
+   * cross-faded so it does not click.
+   */
   private startCrowd(): void {
     const c = this.ctx!;
-    const len = c.sampleRate * 2;
+    const len = c.sampleRate * 6;
+    const fade = Math.floor(c.sampleRate * 0.5);
+    const raw = new Float32Array(len + fade);
+    let b = 0;
+    let env = 0.7;
+    let envTarget = 0.7;
+    for (let i = 0; i < raw.length; i++) {
+      b = (b + (Math.random() * 2 - 1) * 0.06) * 0.99;
+      if (i % 4000 === 0) envTarget = 0.55 + Math.random() * 0.45;
+      env += (envTarget - env) * 0.0002;
+      raw[i] = b * env;
+    }
     const buf = c.createBuffer(1, len, c.sampleRate);
     const d = buf.getChannelData(0);
-    let b = 0;
-    for (let i = 0; i < len; i++) {
-      // brown-ish noise with slow modulation sounds like a distant crowd
-      b = (b + (Math.random() * 2 - 1) * 0.08) * 0.985;
-      d[i] = b * (0.7 + 0.3 * Math.sin((i / len) * Math.PI * 14));
+    for (let i = 0; i < len; i++) d[i] = raw[i]!;
+    for (let i = 0; i < fade; i++) {
+      const u = i / fade;
+      d[i] = raw[i]! * u + raw[len + i]! * (1 - u);
     }
     const src = c.createBufferSource();
     src.buffer = buf;
     src.loop = true;
     this.crowdFilter = c.createBiquadFilter();
-    this.crowdFilter.type = 'bandpass';
-    this.crowdFilter.frequency.value = 700;
-    this.crowdFilter.Q.value = 0.6;
+    this.crowdFilter.type = 'lowpass';
+    this.crowdFilter.frequency.value = CROWD_F;
+    this.crowdFilter.Q.value = 0.5;
     this.crowdGain = c.createGain();
-    this.crowdGain.gain.value = 0.25;
+    this.crowdGain.gain.value = this.inArena ? CROWD_BASE : 0;
     src.connect(this.crowdFilter).connect(this.crowdGain).connect(this.crowdBus);
     src.start();
+  }
+
+  /** the crowd is only heard in the arena */
+  arena(on: boolean): void {
+    this.inArena = on;
+    const c = this.ctx;
+    if (!c) return;
+    const g = this.crowdGain.gain;
+    g.cancelScheduledValues(c.currentTime);
+    g.setValueAtTime(g.value, c.currentTime);
+    g.linearRampToValueAtTime(on ? CROWD_BASE : 0, c.currentTime + 0.6);
   }
 
   /** crowd reaction 0..1 (roar on great entries, groan on flops) */
@@ -147,10 +177,10 @@ class AudioEngine {
     f.cancelScheduledValues(t);
     g.setValueAtTime(g.value, t);
     f.setValueAtTime(f.value, t);
-    g.linearRampToValueAtTime(0.25 + level * 1.6, t + 0.12);
-    f.linearRampToValueAtTime(groan ? 350 : 900 + level * 700, t + 0.12);
-    g.linearRampToValueAtTime(0.25, t + 1.4 + level * 1.6);
-    f.linearRampToValueAtTime(700, t + 1.4 + level * 1.6);
+    g.linearRampToValueAtTime(CROWD_BASE + level * 1.4, t + 0.12);
+    f.linearRampToValueAtTime(groan ? 300 : 700 + level * 900, t + 0.12);
+    g.linearRampToValueAtTime(this.inArena ? CROWD_BASE : 0, t + 1.4 + level * 1.6);
+    f.linearRampToValueAtTime(CROWD_F, t + 1.4 + level * 1.6);
   }
 
   hush(): void {
@@ -159,7 +189,7 @@ class AudioEngine {
     const g = this.crowdGain.gain;
     g.cancelScheduledValues(c.currentTime);
     g.setValueAtTime(g.value, c.currentTime);
-    g.linearRampToValueAtTime(0.08, c.currentTime + 0.5);
+    g.linearRampToValueAtTime(this.inArena ? CROWD_BASE * 0.3 : 0, c.currentTime + 0.5);
   }
 
   relax(): void {
@@ -168,7 +198,7 @@ class AudioEngine {
     const g = this.crowdGain.gain;
     g.cancelScheduledValues(c.currentTime);
     g.setValueAtTime(g.value, c.currentTime);
-    g.linearRampToValueAtTime(0.25, c.currentTime + 0.8);
+    g.linearRampToValueAtTime(this.inArena ? CROWD_BASE : 0, c.currentTime + 0.8);
   }
 }
 

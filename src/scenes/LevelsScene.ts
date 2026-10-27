@@ -2,9 +2,9 @@
 // and a panel describing the selected level. Keyboard, mouse, touch, pad.
 
 import Phaser from 'phaser';
-import { HEIGHT, WIDTH } from '../config';
-import { C, col } from '../render/palette';
-import { panel, txt } from '../ui/text';
+import { UI_H as HEIGHT, UI_W as WIDTH } from '../config';
+import { C, col, light, mix, shade } from '../render/palette';
+import { panel, title, txt, uiFrame } from '../ui/text';
 import { BACK, input } from '../core/input';
 import { IN } from '../physics/diver';
 import { getSave } from '../core/save';
@@ -15,10 +15,10 @@ import { currentLevel, isUnlocked, startLevel, unlockText } from '../levels/prog
 import { partnerById } from '../ai/partner';
 
 const COLS = 10;
-const CELL_W = 30;
-const CELL_H = 18;
+const CELL_W = 58;
+const CELL_H = 32;
 const GX = (WIDTH - COLS * CELL_W) / 2;
-const GY = 18;
+const GY = 34;
 
 const MOD_TEXT: Record<Modifier, string> = {
   noLine: 'bez linii',
@@ -40,23 +40,25 @@ export class LevelsScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(col(C.navy));
+    audio.arena(false);
+    uiFrame(this, C.navy);
     const s = getSave();
     this.sel = currentLevel(s);
     this.cells = [];
     this.stars = [];
     const total = Object.values(s.levels).reduce((a, l) => a + l.stars, 0);
-    txt(this, 6, 5, '← KAMPANIA SYNCHRO', C.gold);
-    txt(this, WIDTH - 6, 5, `★ ${total}/${LEVELS.length * 3}`, C.gold, 'right');
+    txt(this, GX, 14, '←', C.gold);
+    title(this, WIDTH / 2, 10, 'KAMPANIA SYNCHRO', 16, col(C.paleYellow), col(C.orange));
+    txt(this, WIDTH - GX, 14, `★ ${total}/${LEVELS.length * 3}`, C.gold, 'right');
     this.grid = this.add.graphics().setScrollFactor(0);
     for (const l of LEVELS) {
       const [x, y] = this.cellPos(l.id);
-      this.cells.push(txt(this, x + CELL_W / 2, y + 2, String(l.id), C.white, 'center').setDepth(2));
-      this.stars.push(txt(this, x + CELL_W / 2, y + 10, '', C.gold, 'center').setDepth(2));
+      this.cells.push(txt(this, x + CELL_W / 2, y + 7, String(l.id), C.white, 'center').setDepth(2));
+      this.stars.push(txt(this, x + CELL_W / 2, y + 18, '', C.gold, 'center').setDepth(2));
     }
-    panel(this, 4, GY + 5 * CELL_H + 4, WIDTH - 8, HEIGHT - (GY + 5 * CELL_H + 4) - 4, C.black, C.slate);
-    const top = GY + 5 * CELL_H + 8;
-    this.info = [0, 1, 2, 3, 4].map((i) => txt(this, 10, top + i * 9, '', C.white).setDepth(2));
+    const py = GY + 5 * CELL_H + 8;
+    panel(this, GX, py, WIDTH - 2 * GX, HEIGHT - py - 8, C.navy, C.slate);
+    this.info = [0, 1, 2, 3, 4].map((i) => txt(this, GX + 12, py + 12 + i * 14, '', C.white).setDepth(2));
     this.refresh();
     music.play('menu');
   }
@@ -75,11 +77,19 @@ export class LevelsScene extends Phaser.Scene {
       const open = isUnlocked(l.id, s);
       const st = s.levels[String(l.id)]?.stars ?? 0;
       const final = isFinal(l);
-      g.fillStyle(col(!open ? C.black : final ? C.darkRed : st ? C.darkGreen : C.blue));
-      g.fillRect(x + 1, y + 1, CELL_W - 2, CELL_H - 2);
+      // bevelled tiles: light top edge, dark bottom edge, two-tone face
+      const face = !open ? C.charcoal : final ? C.darkRed : st ? C.darkGreen : C.blue;
+      g.fillStyle(shade(face, 0.5));
+      g.fillRect(x + 2, y + 2, CELL_W - 4, CELL_H - 4);
+      g.fillStyle(light(face, 0.1));
+      g.fillRect(x + 3, y + 3, CELL_W - 6, (CELL_H - 6) / 2);
+      g.fillStyle(mix(col(face), 0x000000, 0.1));
+      g.fillRect(x + 3, y + 3 + (CELL_H - 6) / 2, CELL_W - 6, (CELL_H - 6) / 2);
+      g.fillStyle(light(face, 0.45));
+      g.fillRect(x + 3, y + 3, CELL_W - 6, 1);
       if (l.id === this.sel) {
-        g.lineStyle(1, col(C.gold));
-        g.strokeRect(x + 0.5, y + 0.5, CELL_W - 1, CELL_H - 1);
+        g.lineStyle(2, col(C.gold));
+        g.strokeRect(x + 1, y + 1, CELL_W - 2, CELL_H - 2);
       }
       const t = this.cells[l.id - 1]!;
       t.setText(open ? String(l.id) : final ? 'F' : '·');
@@ -93,12 +103,12 @@ export class LevelsScene extends Phaser.Scene {
     const mods = [...(l.ribbon ? [] : ['bez wstęgi']), ...l.modifiers.map((m) => MOD_TEXT[m])];
     const lines: [string, number][] = [
       [`${l.id}. ${l.name.toUpperCase()}${isFinal(l) ? ` (FINAŁ, ${l.dives.length} SERIE)` : ''}`, isFinal(l) ? C.gold : C.lime],
-      [`${l.dives.join(' ')}  z: ${p.name}`, C.white],
-      [`Próg ${l.scoreMin}  sync ${l.syncMin.toFixed(1)}  ★★ ${l.stars[0]}  ★★★ ${l.stars[1]}`.slice(0, 38), C.lightGrey],
+      [`Skoki: ${l.dives.join(', ')}    partner: ${p.name} (${p.country})`, C.white],
+      [`Próg ${l.scoreMin} pkt   synchronizacja ${l.syncMin.toFixed(1)}   ★★ ${l.stars[0]}   ★★★ ${l.stars[1]}`, C.lightGrey],
       [mods.length ? `Utrudnienia: ${mods.join(', ')}` : best ? `Najlepszy wynik: ${best.toFixed(2)}` : l.unlock ? `Nagroda: ${unlockText(l.unlock)}` : '', C.paleYellow],
       [open ? 'AKCJA start   ESC menu' : 'Zablokowany: zalicz poprzedni poziom', open ? C.sky : C.salmon],
     ];
-    lines.forEach(([t, c], i) => this.info[i]!.setText(t.slice(0, 38)).setTint(col(c)));
+    lines.forEach(([t, c], i) => this.info[i]!.setText(t.slice(0, 72)).setTint(col(c)));
   }
 
   private move(d: number): void {
@@ -133,7 +143,9 @@ export class LevelsScene extends Phaser.Scene {
       audio.play('back');
       this.scene.start('Menu');
     }
-    const click = inp.takeClick();
+    const raw = inp.takeClick();
+    const cam = this.cameras.main;
+    const click = raw && { x: raw.x - cam.x, y: raw.y - cam.y };
     if (click) {
       audio.unlock();
       const cx = Math.floor((click.x - GX) / CELL_W);

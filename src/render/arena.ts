@@ -3,10 +3,11 @@
 // spring-mesh water. Three variants: day hall, night hall, outdoor pool.
 
 import Phaser from 'phaser';
-import { PPM, SHOW_RINGS } from '../config';
+import { HEIGHT, PPM, SHOW_RINGS, WIDTH } from '../config';
 import { WaterSurface } from '../physics/water';
 import { TOWER } from '../physics/diver';
-import { C, col, type ColorIndex } from './palette';
+import { C, col, light, mix, shade, type ColorIndex } from './palette';
+import { vGradient } from './fx';
 import { FONT } from './font';
 import { ensureCrowdTexture, ensureRingsTexture } from './sprites';
 import { COUNTRIES } from '../levels/countries';
@@ -88,10 +89,14 @@ const THEMES: Record<ArenaKind, Theme> = {
 
 const BG_PLANE = 0.35;
 const STAND_PLANE = 0.55;
+/** depth (px) where the static water gradient starts under the surface layer */
+const WATER_BAND = 20;
 /** camera scroll for which back layers line up with the world (centred on the pool) */
-const REF_SCROLL_X = 4 * PPM - 160;
-const REF_SCROLL_Y = -90;
-const layerOffset = (f: number): [number, number] => [-REF_SCROLL_X * (1 - f), -REF_SCROLL_Y * (1 - f)];
+const layerOffset = (f: number): [number, number] => {
+  const refX = 4 * PPM - WIDTH / 2;
+  const refY = -HEIGHT / 2;
+  return [-refX * (1 - f), -refY * (1 - f)];
+};
 
 export class Arena {
   readonly kind: ArenaKind;
@@ -127,70 +132,83 @@ export class Arena {
 
   // -- static layers -------------------------------------------------------
 
-  private bgRect(g: Phaser.GameObjects.Graphics, plane: number, c: ColorIndex, x: number, y: number, w: number, h: number) {
-    void plane;
-    g.fillStyle(col(c));
-    g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
-  }
-
   private drawBackground(): void {
     const t = this.theme;
     const [ox, oy] = layerOffset(BG_PLANE);
     const g = this.scene.add.graphics().setDepth(0).setScrollFactor(BG_PLANE).setPosition(ox, oy);
-    const W = 1000;
-    const x0 = -400;
+    const W = 3600;
+    const x0 = -1400;
     if (this.kind === 'outdoor') {
-      const bands: [ColorIndex, number][] = [
-        [C.blue, -200],
-        [C.sky, -120],
-        [C.paleBlue, -40],
-      ];
-      for (const [c, y] of bands) this.bgRect(g, BG_PLANE, c, x0, y, W, 400);
-      // sun and clouds
+      vGradient(g, x0, -900, W, 860, col(C.blue), col(C.paleBlue), 16);
+      g.fillStyle(col(C.paleBlue));
+      g.fillRect(x0, -40, W, 400);
+      // sun with a soft halo
+      g.fillStyle(light(C.paleYellow, 0.5));
+      g.fillCircle(480, -300, 30);
       g.fillStyle(col(C.paleYellow));
-      g.fillCircle(240, -150, 10);
-      g.fillStyle(col(C.white));
+      g.fillCircle(480, -300, 22);
+      // clouds: puffs with a shaded underside
       for (const [cx, cy] of [
-        [20, -130],
-        [150, -100],
-        [330, -160],
+        [40, -260],
+        [300, -200],
+        [660, -320],
+        [-300, -240],
+        [960, -220],
       ] as const) {
-        g.fillRect(cx, cy, 30, 6);
-        g.fillRect(cx + 6, cy - 4, 16, 4);
+        g.fillStyle(col(C.white));
+        g.fillCircle(cx, cy, 14);
+        g.fillCircle(cx + 18, cy - 8, 18);
+        g.fillCircle(cx + 40, cy, 14);
+        g.fillRect(cx, cy, 40, 14);
+        g.fillStyle(col(C.paleBlue));
+        g.fillRect(cx - 4, cy + 10, 50, 4);
       }
-      // hills
-      g.fillStyle(col(C.green));
-      for (let x = x0; x < x0 + W; x += 4) {
-        const h = 18 + Math.round(10 * Math.sin(x * 0.02) + 6 * Math.sin(x * 0.051));
-        g.fillRect(x, -30 - h, 4, h + 40);
-      }
-      g.fillStyle(col(C.darkGreen));
-      for (let x = x0; x < x0 + W; x += 4) {
-        const h = 8 + Math.round(6 * Math.sin(x * 0.033 + 1));
-        g.fillRect(x, -22 - h, 4, h + 40);
+      // hills, two layers with a lit rim
+      for (const [base, amp, f, c] of [
+        [-60, 20, 0.01, C.green],
+        [-44, 12, 0.017, C.darkGreen],
+      ] as const) {
+        for (let x = x0; x < x0 + W; x += 2) {
+          const h = amp + Math.round(amp * 0.6 * Math.sin(x * f) + amp * 0.35 * Math.sin(x * f * 2.6 + 1));
+          g.fillStyle(col(c));
+          g.fillRect(x, base - h, 2, h + 80);
+          g.fillStyle(light(c, 0.25));
+          g.fillRect(x, base - h, 2, 2);
+        }
       }
     } else {
-      this.bgRect(g, BG_PLANE, t.wall, x0, -300, W, 400);
+      vGradient(g, x0, -900, W, 1000, t.night ? col(C.black) : shade(t.wall, 0.25), col(t.wall), 14);
       // windows / light panels
-      for (let x = x0; x < x0 + W; x += 40) {
-        for (let y = -190; y < -60; y += 34) {
-          this.bgRect(g, BG_PLANE, t.night ? C.charcoal : C.white, x + 6, y, 26, 22);
-          this.bgRect(g, BG_PLANE, t.night ? C.navy : C.sky, x + 8, y + 2, 22, 18);
-          if (t.night && (x / 40 + y / 34) % 3 === 0) this.bgRect(g, BG_PLANE, C.gold, x + 17, y + 9, 2, 2);
+      for (let x = x0; x < x0 + W; x += 80) {
+        for (let y = -380; y < -120; y += 68) {
+          g.fillStyle(t.night ? col(C.charcoal) : col(C.white));
+          g.fillRect(x + 12, y, 52, 44);
+          vGradient(g, x + 16, y + 4, 44, 36, t.night ? col(C.navy) : col(C.sky), t.night ? col(C.black) : col(C.paleBlue), 4);
+          if (!t.night) {
+            // diagonal glint
+            g.fillStyle(light(C.paleBlue, 0.5));
+            for (let k = 0; k < 10; k++) g.fillRect(x + 20 + k * 2, y + 30 - k * 2, 2, 2);
+          } else if ((x / 80 + y / 68) % 3 === 0) {
+            g.fillStyle(col(C.gold));
+            g.fillRect(x + 34, y + 18, 4, 4);
+          }
         }
       }
       // roof trusses
       g.fillStyle(col(t.wallDark));
-      for (let x = x0; x < x0 + W; x += 8) g.fillRect(x, -220 + ((x / 8) % 2) * 4, 8, 3);
-      g.fillRect(x0, -224, W, 3);
+      g.fillRect(x0, -452, W, 6);
+      for (let x = x0; x < x0 + W; x += 32) {
+        for (let k = 0; k < 16; k++) g.fillRect(x + k * 2, -440 + (k < 8 ? k : 15 - k) * 3, 2, 2);
+      }
+      g.fillRect(x0, -416, W, 4);
       if (t.night) {
         g.fillStyle(col(C.paleYellow));
-        for (let x = x0 + 10; x < x0 + W; x += 60) g.fillRect(x, -214, 6, 3);
+        for (let x = x0 + 20; x < x0 + W; x += 120) g.fillRect(x, -426, 12, 6);
       }
     }
     if (SHOW_RINGS) {
-      ensureRingsTexture(this.scene, 'rings-small', 5, this.theme.night ? C.white : C.black);
-      this.scene.add.image(160 + ox, -200 + oy, 'rings-small').setScrollFactor(BG_PLANE).setDepth(1);
+      ensureRingsTexture(this.scene, 'rings-small', 10, this.theme.night ? C.white : C.black);
+      this.scene.add.image(WIDTH / 2 + ox, -420 + oy, 'rings-small').setScrollFactor(BG_PLANE).setDepth(1);
     }
   }
 
@@ -198,55 +216,65 @@ export class Arena {
     const t = this.theme;
     const [ox, oy] = layerOffset(STAND_PLANE);
     const g = this.scene.add.graphics().setDepth(5).setScrollFactor(STAND_PLANE);
-    const left = 40 + ox;
-    const right = 600 + ox;
+    const left = -900 + ox;
+    const right = 2200 + ox;
     // tiers
     const rows = 6;
-    const base = -14 + oy;
+    const base = -28 + oy;
     ensureCrowdTexture(this.scene, `crowd-${this.kind}-a`, 3, t.night);
     ensureCrowdTexture(this.scene, `crowd-${this.kind}-b`, 17, t.night);
     for (let r = 0; r < rows; r++) {
-      const y = base - r * 9;
-      g.fillStyle(col(r % 2 ? t.stands : t.concreteDark));
-      g.fillRect(left + r * 4, y, right - left, 9);
+      const y = base - r * 18;
+      const c = r % 2 ? t.stands : t.concreteDark;
+      g.fillStyle(col(c));
+      g.fillRect(left + r * 8, y, right - left, 18);
+      g.fillStyle(light(c, 0.2));
+      g.fillRect(left + r * 8, y, right - left, 2);
+      g.fillStyle(shade(c, 0.3));
+      g.fillRect(left + r * 8, y + 16, right - left, 2);
       const crowd = this.scene.add
-        .tileSprite(left + r * 4, y - 7, right - left - r * 8, 8, `crowd-${this.kind}-${r % 2 ? 'a' : 'b'}`, 'a')
+        .tileSprite(left + r * 8, y - 14, right - left - r * 16, 16, `crowd-${this.kind}-${r % 2 ? 'a' : 'b'}`, 'a')
         .setOrigin(0, 0)
         .setScrollFactor(STAND_PLANE)
         .setDepth(6);
-      crowd.tilePositionX = r * 13;
+      crowd.tilePositionX = r * 26;
       this.crowds.push(crowd);
     }
     // railing and flags
-    const flagY = base - rows * 9 - 18;
+    const flagY = base - rows * 18 - 36;
     g.fillStyle(col(t.concreteDark));
-    g.fillRect(left, flagY + 10, right - left, 2);
-    for (let i = 0; i < 26; i++) {
+    g.fillRect(left, flagY + 20, right - left, 4);
+    for (let i = 0; i < 76; i++) {
       const c = COUNTRIES[i % COUNTRIES.length]!;
-      const x = left + 10 + i * 20;
+      const x = left + 20 + i * 40;
       g.fillStyle(col(C.grey));
-      g.fillRect(x, flagY - 2, 1, 12);
-      this.scene.add.image(x + 1, flagY - 2, 'flags', c.code).setOrigin(0, 0).setScrollFactor(STAND_PLANE).setDepth(6);
+      g.fillRect(x, flagY - 4, 2, 24);
+      g.fillStyle(col(C.lightGrey));
+      g.fillRect(x, flagY - 6, 2, 2);
+      this.scene.add.image(x + 2, flagY - 4, 'flags', c.code).setOrigin(0, 0).setScrollFactor(STAND_PLANE).setDepth(6);
     }
     // LED scoreboard
-    const bx = 200 + ox;
-    const by = flagY - 48;
+    const bx = WIDTH / 2 - 128 + 160 + ox;
+    const by = flagY - 104;
     g.fillStyle(col(C.charcoal));
-    g.fillRect(bx - 4, by - 4, 128, 44);
+    g.fillRect(bx - 8, by - 8, 272, 96);
+    g.fillStyle(light(C.charcoal, 0.2));
+    g.fillRect(bx - 8, by - 8, 272, 2);
     g.fillStyle(col(C.black));
-    g.fillRect(bx - 2, by - 2, 124, 40);
+    g.fillRect(bx - 4, by - 4, 264, 88);
     for (let i = 0; i < 3; i++) {
       const txt = this.scene.add
-        .bitmapText(bx + 2, by + 2 + i * 12, FONT, '', 8)
+        .bitmapText(bx + 4, by + 2 + i * 26, FONT, '', 16)
         .setScrollFactor(STAND_PLANE)
         .setDepth(7)
         .setTint(col(i === 0 ? C.gold : i === 1 ? C.orange : C.red));
       this.board.push(txt);
     }
-    // LED dot grid overlay (every other pixel row dark)
+    // LED dot grid overlay
     const grid = this.scene.add.graphics().setDepth(8).setScrollFactor(STAND_PLANE);
     grid.fillStyle(col(C.black));
-    for (let y = by - 1; y < by + 38; y += 2) grid.fillRect(bx - 1, y, 122, 1);
+    for (let y = by - 2; y < by + 82; y += 2) grid.fillRect(bx - 2, y, 260, 1);
+    for (let x = bx - 2; x < bx + 258; x += 2) grid.fillRect(x, by - 2, 1, 84);
     this.setBoard('', '', '');
   }
 
@@ -264,49 +292,60 @@ export class Arena {
     g.fillStyle(col(t.concreteDark));
     g.fillRect(Math.round(x0), Math.round(y0), Math.round(x1 - x0), Math.round(TOWER.slab * PPM * p.s));
     g.fillStyle(col(t.concreteLight));
-    g.fillRect(Math.round(x0), Math.round(y0), Math.round(x1 - x0), 1);
+    g.fillRect(Math.round(x0), Math.round(y0), Math.round(x1 - x0), 2);
   }
 
   private drawTower(active: number): void {
     const t = this.theme;
     const g = this.scene.add.graphics().setDepth(30);
     const m = PPM;
-    const colX0 = -TOWER.depth - 2.2;
-    const colX1 = -TOWER.overhang;
-    // column with shading
-    g.fillStyle(col(t.concrete));
-    g.fillRect(colX0 * m, -10.6 * m, (colX1 - colX0) * m, 10.6 * m);
+    const colX0 = Math.round((-TOWER.depth - 2.2) * m);
+    const colX1 = Math.round(-TOWER.overhang * m);
+    const top = Math.round(-10.6 * m);
+    // column: lit from the right, darker to the left, with panel joints
+    const cw = colX1 - colX0;
+    const bands = 8;
+    for (let i = 0; i < bands; i++) {
+      g.fillStyle(mix(shade(t.concrete, 0.25), col(t.concreteLight), i / (bands - 1)));
+      g.fillRect(colX0 + Math.round((i * cw) / bands), top, Math.ceil(cw / bands), -top);
+    }
     g.fillStyle(col(t.concreteDark));
-    g.fillRect(colX1 * m - 3, -10.6 * m, 3, 10.6 * m);
-    for (let y = 1; y < 10; y += 1) g.fillRect(colX0 * m, -y * m, (colX1 - colX0) * m - 3, 1);
+    g.fillRect(colX1 - 6, top, 6, -top);
+    g.fillStyle(shade(t.concrete, 0.15));
+    for (let y = 1; y < 10; y += 1) g.fillRect(colX0, -y * m, cw - 6, 2);
     // ladder
     g.fillStyle(col(t.concreteDark));
-    g.fillRect(colX0 * m + 6, -10 * m, 1, 10 * m);
-    g.fillRect(colX0 * m + 12, -10 * m, 1, 10 * m);
-    for (let y = 0; y < 10 * m; y += 4) g.fillRect(colX0 * m + 6, -y, 7, 1);
+    g.fillRect(colX0 + 12, -10 * m, 2, 10 * m);
+    g.fillRect(colX0 + 26, -10 * m, 2, 10 * m);
+    for (let y = 0; y < 10 * m; y += 8) g.fillRect(colX0 + 12, -y, 16, 2);
     // platforms
     for (const h of PLATFORMS) {
       const isActive = h === active;
-      const y = -h * m;
-      const x0 = colX1 * m - (isActive ? TOWER.depth - TOWER.overhang : 0.6) * m;
-      const x1 = isActive ? 0 : (h === 10 ? 0 : -0.3 * (10 - h)) * m;
+      const y = Math.round(-h * m);
+      const x0 = colX1 - Math.round((isActive ? TOWER.depth - TOWER.overhang : 0.6) * m);
+      const x1 = isActive ? 0 : Math.round((h === 10 ? 0 : -0.3 * (10 - h)) * m);
       const thick = Math.round(TOWER.slab * m);
-      g.fillStyle(col(isActive ? t.concrete : t.concreteDark));
-      g.fillRect(Math.round(x0), Math.round(y), Math.round(x1 - x0), thick);
+      const face = isActive ? t.concrete : t.concreteDark;
+      g.fillStyle(col(face));
+      g.fillRect(x0, y, x1 - x0, thick);
+      g.fillStyle(shade(face, 0.2));
+      g.fillRect(x0, y + Math.round(thick / 2), x1 - x0, thick - Math.round(thick / 2));
       g.fillStyle(col(t.concreteLight));
-      g.fillRect(Math.round(x0), Math.round(y), Math.round(x1 - x0), 1);
+      g.fillRect(x0, y, x1 - x0, 2);
       g.fillStyle(col(C.slate));
-      g.fillRect(Math.round(x0), Math.round(y) + thick - 1, Math.round(x1 - x0), 1);
+      g.fillRect(x0, y + thick - 2, x1 - x0, 2);
       // edge marker (yellow stripe like real platforms)
       g.fillStyle(col(C.gold));
-      g.fillRect(Math.round(x1) - 2, Math.round(y), 2, thick);
+      g.fillRect(x1 - 4, y, 4, thick);
+      g.fillStyle(light(C.gold, 0.4));
+      g.fillRect(x1 - 4, y, 4, 2);
       // railing at the back
       g.fillStyle(col(C.grey));
-      g.fillRect(Math.round(x0), Math.round(y) - 14, 1, 14);
-      g.fillRect(Math.round(x0), Math.round(y) - 14, 12, 1);
-      g.fillRect(Math.round(x0), Math.round(y) - 7, 12, 1);
+      g.fillRect(x0, y - 28, 2, 28);
+      g.fillRect(x0, y - 28, 24, 2);
+      g.fillRect(x0, y - 14, 24, 2);
       // height label
-      const lbl = this.scene.add.bitmapText(Math.round(colX0 * m) + 16, Math.round(y) + 2, FONT, h === 7.5 ? '7½' : String(h), 8);
+      const lbl = this.scene.add.bitmapText(colX0 + 34, y + 4, FONT, h === 7.5 ? '7½' : String(h), 8);
       lbl.setTint(col(t.night ? C.lightGrey : C.slate)).setDepth(31);
     }
   }
@@ -315,19 +354,25 @@ export class Arena {
     const t = this.theme;
     const g = this.scene.add.graphics().setDepth(70);
     const m = PPM;
-    // deck on both sides of the pool
+    // deck on both sides of the pool, with a tiled edge
     g.fillStyle(col(t.deck));
     g.fillRect(-40 * m, 0, (POOL.x0 + 40) * m, 8 * m);
     g.fillRect(POOL.x1 * m, 0, 30 * m, 8 * m);
+    g.fillStyle(shade(t.deck, 0.15));
+    for (let x = -40 * m; x < POOL.x0 * m; x += 16) g.fillRect(x, 4, 1, 8 * m);
+    for (let x = POOL.x1 * m; x < (POOL.x1 + 30) * m; x += 16) g.fillRect(x, 4, 1, 8 * m);
     g.fillStyle(col(C.white));
-    for (let x = -40 * m; x < POOL.x0 * m; x += 8) g.fillRect(x, 0, 4, 1);
-    for (let x = POOL.x1 * m; x < (POOL.x1 + 30) * m; x += 8) g.fillRect(x, 0, 4, 1);
-    // pool bottom
+    for (let x = -40 * m; x < POOL.x0 * m; x += 16) g.fillRect(x, 0, 8, 2);
+    for (let x = POOL.x1 * m; x < (POOL.x1 + 30) * m; x += 16) g.fillRect(x, 0, 8, 2);
+    // pool bottom with lane markings
     g.fillStyle(col(t.concreteDark));
     g.fillRect(POOL.x0 * m, POOL.depth * m, (POOL.x1 - POOL.x0) * m, 3 * m);
     g.fillStyle(col(C.deepBlue));
-    g.fillRect(POOL.x0 * m, POOL.depth * m, (POOL.x1 - POOL.x0) * m, 2);
-    for (let x = POOL.x0; x < POOL.x1; x += 2.5) g.fillRect(x * m, POOL.depth * m - 6, 2, 6);
+    g.fillRect(POOL.x0 * m, POOL.depth * m, (POOL.x1 - POOL.x0) * m, 4);
+    for (let x = POOL.x0; x < POOL.x1; x += 2.5) g.fillRect(x * m, POOL.depth * m - 12, 4, 12);
+    // static deep water under the moving surface layer
+    const wg = this.scene.add.graphics().setDepth(59);
+    vGradient(wg, POOL.x0 * m, WATER_BAND, (POOL.x1 - POOL.x0) * m, POOL.depth * m - WATER_BAND, col(t.water), col(C.deepWater), 10);
   }
 
   // -- dynamic -------------------------------------------------------------
@@ -368,7 +413,8 @@ export class Arena {
       const x = Math.round((w.x0 + i * w.dx) * m + plane.ox);
       const top = Math.round(-w.h[i]! * m + plane.oy);
       const h = Math.max(1, Math.round(bottomPx - top));
-      g.fillStyle(col(t.water));
+      // a little darker than the front pool: it is further away
+      g.fillStyle(mix(col(t.water), col(C.deepWater), 0.18));
       g.fillRect(x, top, Math.ceil(step), h);
       // crest highlights and reflections
       const slope = (w.h[Math.min(w.cols - 1, i + 1)]! - w.h[Math.max(0, i - 1)]!) * m;
@@ -388,53 +434,54 @@ export class Arena {
     const m = PPM;
     const w = this.water;
     g.clear();
-    // water body: light top band, dithered transitions, deep bottom
-    const deepTop = 10;
-    const darkTop = 44;
-    const bottom = POOL.depth * m;
+    // moving surface layer down to the static gradient below it
     for (let i = 0; i < w.cols; i++) {
       const x = Math.round((w.x0 + i * w.dx) * m);
       const top = Math.round(-w.h[i]! * m);
-      const odd = i % 2;
       g.fillStyle(col(t.water));
-      g.fillRect(x, top, 1, deepTop + odd * 2 - top);
-      g.fillStyle(col(t.waterDeep));
-      g.fillRect(x, deepTop + odd * 2, 1, darkTop + odd * 2 - deepTop - odd * 2);
-      g.fillStyle(col(C.deepWater));
-      g.fillRect(x, darkTop + odd * 2, 1, bottom - darkTop - odd * 2);
+      g.fillRect(x, top, 1, WATER_BAND + (i % 2) - top);
       const slope = (w.h[Math.min(w.cols - 1, i + 1)]! - w.h[Math.max(0, i - 1)]!) * m;
-      const sh = Math.sin(this.time * 2.3 + i * 0.37) + Math.sin(i * 1.7 + this.time * 0.9);
-      g.fillStyle(col(slope < -0.4 || sh > 1.55 ? t.foam : t.waterLight));
-      g.fillRect(x, top, 1, 1);
-      if (sh > 1.25) g.fillRect(x, top + 3 + ((i * 7) % 3), 1, 1);
-      // caustics on the deep water
-      if (Math.sin(i * 0.9 + this.time * 3) + Math.sin(i * 0.23 - this.time * 1.3) > 1.7) {
-        g.fillStyle(col(t.water));
-        g.fillRect(x, deepTop + 6 + ((i * 5) % 9), 1, 1);
+      const sh = Math.sin(this.time * 2.3 + i * 0.19) + Math.sin(i * 0.85 + this.time * 0.9);
+      g.fillStyle(slope < -0.4 || sh > 1.55 ? col(t.foam) : col(t.waterLight));
+      g.fillRect(x, top, 1, 2);
+      if (sh > 1.25) {
+        g.fillStyle(mix(col(t.water), col(t.waterLight), 0.6));
+        g.fillRect(x, top + 6 + ((i * 7) % 5), 1, 1);
+      }
+      // caustics
+      if (Math.sin(i * 0.45 + this.time * 3) + Math.sin(i * 0.11 - this.time * 1.3) > 1.75) {
+        g.fillStyle(light(t.water, 0.2));
+        g.fillRect(x, WATER_BAND + 12 + ((i * 5) % 18), 1, 2);
       }
     }
     // lane rope floats
     for (let x = POOL.x0 + 0.5; x < POOL.x1; x += 0.25) {
       const k = Math.round((x - POOL.x0) * 4);
-      g.fillStyle(col(k % 6 < 3 ? C.red : C.white));
-      g.fillRect(Math.round(x * m), Math.round(-w.heightAt(x) * m) + 4, 2, 1);
+      const c = k % 6 < 3 ? C.red : C.white;
+      const y = Math.round(-w.heightAt(x) * m) + 6;
+      g.fillStyle(col(c));
+      g.fillRect(Math.round(x * m), y, 5, 3);
+      g.fillStyle(light(c, 0.5));
+      g.fillRect(Math.round(x * m) + 1, y, 3, 1);
     }
     // splash drops and bubbles
     for (const p of w.drops) {
-      g.fillStyle(col(p.tone === 0 ? C.white : p.tone === 1 ? t.waterLight : t.water));
-      g.fillRect(Math.round(p.x * m), Math.round(-p.y * m), 1, 1);
+      g.fillStyle(p.tone === 0 ? col(C.white) : p.tone === 1 ? col(t.waterLight) : col(t.water));
+      g.fillRect(Math.round(p.x * m), Math.round(-p.y * m), 2, 2);
     }
     for (const p of w.bubbles) {
       g.fillStyle(col(p.tone === 0 ? C.foam : C.white));
-      g.fillRect(Math.round(p.x * m), Math.round(-p.y * m), 1, 1);
+      g.fillRect(Math.round(p.x * m), Math.round(-p.y * m), 2, 2);
     }
     if (this.backWater && this.backWaterG && this.backPlane) {
-      // back surface: from the back line down to the front surface
-      this.drawWaterBody(this.backWaterG, this.backWater, this.backPlane, 0, 3.1);
+      // back surface: from the back line down past the front surface. The
+      // back layer scrolls slower, so the front line moves in its coordinates.
+      const front = (this.backPlane.s - 1) * this.scene.cameras.main.scrollY;
+      this.drawWaterBody(this.backWaterG, this.backWater, this.backPlane, front + WATER_BAND + 8, 3.1);
       for (const p of this.backWater.drops) {
         this.backWaterG.fillStyle(col(p.tone === 0 ? C.white : t.waterLight));
         const [sx, sy] = toScreen(this.backPlane, p.x, p.y);
-        this.backWaterG.fillRect(Math.round(sx), Math.round(sy), 1, 1);
+        this.backWaterG.fillRect(Math.round(sx), Math.round(sy), 2, 2);
       }
     }
   }

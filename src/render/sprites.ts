@@ -4,7 +4,7 @@
 // atlas can replace them (see ASEPRITE_ATLAS in config.ts).
 
 import Phaser from 'phaser';
-import { C, OUTFITS, cssCol, type ColorIndex } from './palette';
+import { C, OUTFITS, css, cssCol, light, shade, type ColorIndex } from './palette';
 import { COUNTRIES, type Country } from '../levels/countries';
 
 export const FRAME_NAMES = [
@@ -28,28 +28,136 @@ export const FRAME_NAMES = [
 export type FrameName = (typeof FRAME_NAMES)[number];
 
 /**
- * Pixel maps. Side view, front of the body to the right. Limbs are drawn
- * pointing down from the proximal joint, the torso pointing up from the hip.
- * h hair, s skin, S light skin, d dark skin, e eye, c costume, a accent.
+ * Pixel maps, drawn for 32 px per metre. Side view, front of the body to
+ * the right. Limbs are drawn pointing down from the proximal joint, the
+ * torso pointing up from the hip. h hair, s skin, S light skin, d dark skin,
+ * w eye white, e eye/mouth, c costume, a accent. The far limbs are the near
+ * ones recoloured darker (see FAR).
  */
-const MAPS: Record<FrameName, string[]> = {
-  head: ['.hhh.', 'hhhss', 'hhhes', '.hsss', '..ss.'],
-  headFront: ['.hhh.', 'hhhhh', 'sesse', 'sssss', '.sss.'],
-  headBack: ['.hhh.', 'hhhhh', 'hhhhh', 'hhhhh', '.sss.'],
-  torso: ['.sss.', 'sccca', 'scccc', '.cccc', '.cacc', '.cccc', '.cccc', 'ccccc', '.ccc.'],
-  torsoFront: ['.sss.', 'scccs', 'caaac', 'ccccc', '.ccc.', '.ccc.', '.ccc.', 'ccccc', '.c.c.'],
-  torsoBack: ['.sss.', 'scccs', 'ccacc', 'ccacc', '.ccc.', '.ccc.', '.ccc.', 'ccccc', '.c.c.'],
-  upperArm: ['ss', 'ss', 'ss', 'ss', 'ss'],
-  forearm: ['ss', 'ss', 'ss', 'ss', 'SS', 'S.'],
-  thigh: ['ccc', 'ccc', 'sss', 'sss', 'sss', '.ss', '.ss'],
-  shin: ['ss', 'ss', 'ss', 'ss', 'ss', 'ss', 'ss'],
-  foot: ['ss', 'ss', 'ss', 'S.'],
-  upperArmFar: ['dd', 'dd', 'dd', 'dd', 'dd'],
-  forearmFar: ['dd', 'dd', 'dd', 'dd', 'dd', 'd.'],
-  thighFar: ['aaa', 'aaa', 'ddd', 'ddd', 'ddd', '.dd', '.dd'],
-  shinFar: ['dd', 'dd', 'dd', 'dd', 'dd', 'dd', 'dd'],
-  footFar: ['dd', 'dd', 'dd', 'd.'],
+type NearFrame = Exclude<FrameName, `${string}Far`>;
+const MAPS: Record<NearFrame, string[]> = {
+  head: [
+    '..hhhhhh..',
+    '.hhhhhhhh.',
+    'hhhhhhhhhh',
+    'hhhhhhhsss',
+    'hhhhhdssss',
+    'hhhhhsswes',
+    '.hhhssssSS',
+    '.hhsssssd.',
+    '..ssssssd.',
+    '...ssss...',
+  ],
+  headFront: [
+    '..hhhhhh..',
+    '.hhhhhhhh.',
+    'hhhhhhhhhh',
+    'hhsssssshh',
+    'hsSssssSsh',
+    'hswesswesh',
+    '.ssssSsss.',
+    '.sssddsss.',
+    '..ssssss..',
+    '...ssss...',
+  ],
+  headBack: [
+    '..hhhhhh..',
+    '.hhhhhhhh.',
+    'hhhhhhhhhh',
+    'hhhhhhhhhh',
+    'hhhhhhhhhh',
+    'hhhhhhhhhh',
+    'dhhhhhhhhd',
+    '.hhhhhhhh.',
+    '..dssssd..',
+    '...ssss...',
+  ],
+  torso: [
+    '....sss...',
+    '...sssss..',
+    '.Sssssssd.',
+    '.ssccccss.',
+    '.sccccccs.',
+    '.ccccccca.',
+    '.ccccccca.',
+    '.cccccccc.',
+    '..ccccccc.',
+    '..cccccc..',
+    '..cccccc..',
+    '..caaaac..',
+    '..cccccc..',
+    '..cccccc..',
+    '.ccccccc..',
+    '.cccccccc.',
+    '.cccccccc.',
+    '..cccccc..',
+  ],
+  torsoFront: [
+    '....ss....',
+    '...ssss...',
+    '.ssssssss.',
+    'sscsssscss',
+    'scccsscccs',
+    '.cccaaccc.',
+    '.cccccccc.',
+    '..cccccc..',
+    '..cccccc..',
+    '..cccccc..',
+    '..caaaac..',
+    '..cccccc..',
+    '..cccccc..',
+    '.cccccccc.',
+    '.cccccccc.',
+    '.cccccccc.',
+    '.ccc..ccc.',
+    '.cc....cc.',
+  ],
+  torsoBack: [
+    '....ss....',
+    '...ssss...',
+    '.ssssssss.',
+    'ssccccccss',
+    'scccaaccc s'.replace(' ', ''),
+    '.cccaaccc.',
+    '.cccaaccc.',
+    '..ccaacc..',
+    '..ccaacc..',
+    '..ccaacc..',
+    '..cccccc..',
+    '..cccccc..',
+    '..cccccc..',
+    '.cccccccc.',
+    '.cccccccc.',
+    '.cccccccc.',
+    '.ccc..ccc.',
+    '.cc....cc.',
+  ],
+  upperArm: ['sss', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'sss'],
+  forearm: ['Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'Ssd', 'SSs', 'SSs', 'SS.', 'S..'],
+  thigh: [
+    'cccccc',
+    'cccccc',
+    'caaaac',
+    'Ssssss',
+    'Sssssd',
+    'Sssssd',
+    'Sssssd',
+    '.Ssssd',
+    '.Ssssd',
+    '.Ssssd',
+    '.Sssd.',
+    '.Sssd.',
+    '.Sssd.',
+    '..ss..',
+  ],
+  shin: ['Sssd', 'Sssd', 'Sssd', 'Sssd', 'Sssd', '.Ssd', '.Ssd', '.Ssd', '.Ssd', '.Ssd', '.Ssd', '.Ssd', '.ssd', '.ss.'],
+  foot: ['sss', 'sss', 'Ssd', 'Ssd', 'Ssd', 'SS.', 'S..'],
 };
+
+/** far limbs: the near map in shadow colours */
+const FAR: Record<string, string> = { s: 'd', S: 'd', d: 'd', c: 'c', a: 'c' };
+const mapOf = (name: FrameName): string[] =>
+  name.endsWith('Far') ? MAPS[name.slice(0, -3) as NearFrame].map((r) => [...r].map((ch) => FAR[ch] ?? ch).join('')) : MAPS[name as NearFrame];
 
 /** Origin of each frame: the joint the segment rotates around. */
 export const ORIGINS: Record<FrameName, [number, number]> = {
@@ -110,21 +218,20 @@ export function ensureDiverTexture(scene: Phaser.Scene, look: DiverLook): string
     S: light,
     d: dark,
     e: C.black,
+    w: C.white,
     c: outfit.main,
     a: outfit.accent,
   };
   const canvas = document.createElement('canvas');
-  canvas.width = FRAME_NAMES.length * 6;
-  canvas.height = 10;
+  canvas.width = FRAME_NAMES.length * 12;
+  canvas.height = 20;
   const ctx = canvas.getContext('2d')!;
   const rects: [FrameName, number, number, number, number][] = [];
   FRAME_NAMES.forEach((name, i) => {
-    const rows = MAPS[name];
+    const rows = mapOf(name);
     const w = Math.max(...rows.map((r) => r.length));
-    const x = i * 6;
-    const far = name.endsWith('Far');
-    const cmap = far ? { ...colors, a: outfit.main, c: outfit.main } : colors;
-    paintMap(ctx, rows, x, 0, cmap);
+    const x = i * 12;
+    paintMap(ctx, rows, x, 0, colors);
     rects.push([name, x, 0, w, rows.length]);
   });
   const tex = scene.textures.addCanvas(key, canvas)!;
@@ -135,11 +242,11 @@ export function ensureDiverTexture(scene: Phaser.Scene, look: DiverLook): string
 // ---------------------------------------------------------------------------
 // Arena sprites
 
-/** crowd strip: two frames (arms down / arms up) of a row of spectators */
+/** crowd strip: two frames (sitting / cheering) of a row of spectators */
 export function ensureCrowdTexture(scene: Phaser.Scene, key: string, seed: number, night: boolean): void {
   if (scene.textures.exists(key)) return;
-  const W = 64;
-  const H = 8;
+  const W = 128;
+  const H = 16;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H * 2;
@@ -147,29 +254,36 @@ export function ensureCrowdTexture(scene: Phaser.Scene, key: string, seed: numbe
   // muted colours so the divers stand out in front of the stands
   const shirts = night ? [C.slate, C.deepBlue, C.charcoal, C.navy, C.grey] : [C.slate, C.grey, C.lightGrey, C.teal, C.sky, C.salmon, C.paleBlue];
   const skins = night ? [C.grey, C.slate] : [C.skinDark, C.skin, C.grey];
+  const hairs = night ? [C.charcoal, C.navy] : [C.darkBrown, C.brown, C.charcoal, C.black, C.paleYellow];
   let s = seed;
   const rnd = () => {
     s = (s * 1103515245 + 12345) & 0x7fffffff;
     return s / 0x7fffffff;
   };
+  const px = (c: string, x: number, y: number, w: number, h: number) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, w, h);
+  };
   for (let f = 0; f < 2; f++) {
-    let st = seed;
-    s = st;
-    for (let x = 0; x < W; x += 4) {
+    s = seed;
+    for (let x = 0; x < W; x += 8) {
       const shirt = shirts[Math.floor(rnd() * shirts.length)]!;
       const skin = skins[Math.floor(rnd() * skins.length)]!;
-      const jump = rnd() < 0.5 ? 1 : 0;
-      const oy = f * H + (f === 1 ? -jump : 0);
-      ctx.fillStyle = cssCol(skin);
-      ctx.fillRect(x + 1, oy + 2, 2, 2);
-      ctx.fillStyle = cssCol(shirt);
-      ctx.fillRect(x, oy + 4, 4, 4);
-      if (f === 1 && jump) {
-        ctx.fillStyle = cssCol(skin);
-        ctx.fillRect(x, oy + 1, 1, 3);
-        ctx.fillRect(x + 3, oy + 1, 1, 3);
+      const hair = hairs[Math.floor(rnd() * hairs.length)]!;
+      const cheer = rnd() < 0.5;
+      const oy = f * H + (f === 1 && cheer ? -2 : 0) + (rnd() < 0.3 ? 1 : 0);
+      // head with hair, lit from the top right
+      px(cssCol(skin), x + 2, oy + 3, 4, 4);
+      px(css(shade(skin, 0.25)), x + 2, oy + 6, 4, 1);
+      px(cssCol(hair), x + 2, oy + 2, 4, 2);
+      // body: shirt with a light right edge and a dark left edge
+      px(cssCol(shirt), x + 1, oy + 8, 6, 8);
+      px(css(light(shirt, 0.25)), x + 5, oy + 8, 2, 6);
+      px(css(shade(shirt, 0.35)), x + 1, oy + 9, 1, 7);
+      if (f === 1 && cheer) {
+        px(cssCol(skin), x, oy + 2, 1, 6);
+        px(cssCol(skin), x + 7, oy + 2, 1, 6);
       }
-      st++;
     }
   }
   const tex = scene.textures.addCanvas(key, canvas)!;
@@ -177,8 +291,8 @@ export function ensureCrowdTexture(scene: Phaser.Scene, key: string, seed: numbe
   tex.add('b', 0, 0, H, W, H);
 }
 
-export const FLAG_W = 9;
-export const FLAG_H = 6;
+export const FLAG_W = 18;
+export const FLAG_H = 12;
 
 export function drawFlag(ctx: CanvasRenderingContext2D, c: Country, x: number, y: number): void {
   const f = c.flag;
@@ -200,22 +314,23 @@ export function drawFlag(ctx: CanvasRenderingContext2D, c: Country, x: number, y
     const m = f.mark;
     switch (m.kind) {
       case 'dot':
-        ctx.fillRect(x + 3, y + 2, 3, 2);
-        ctx.fillRect(x + 4, y + 1, 1, 4);
+        ctx.fillRect(x + 7, y + 3, 4, 6);
+        ctx.fillRect(x + 6, y + 4, 6, 4);
         break;
       case 'cross':
-        ctx.fillRect(x + 2, y, 2, FLAG_H);
-        ctx.fillRect(x, y + 2, FLAG_W, 2);
+        ctx.fillRect(x + 5, y, 3, FLAG_H);
+        ctx.fillRect(x, y + 5, FLAG_W, 2);
         break;
       case 'canton':
-        ctx.fillRect(x, y, 4, 3);
+        ctx.fillRect(x, y, 8, 6);
         break;
       case 'star':
-        ctx.fillRect(x + 1, y + 1, 2, 2);
+        ctx.fillRect(x + 3, y + 2, 2, 4);
+        ctx.fillRect(x + 2, y + 3, 4, 2);
         break;
       case 'centerCross':
-        ctx.fillRect(x + 4, y, 1, FLAG_H);
-        ctx.fillRect(x, y + 2, FLAG_W, 2);
+        ctx.fillRect(x + 8, y, 2, FLAG_H);
+        ctx.fillRect(x, y + 5, FLAG_W, 2);
         break;
       case 'triangle':
         for (let j = 0; j < FLAG_H; j++) {
@@ -225,6 +340,11 @@ export function drawFlag(ctx: CanvasRenderingContext2D, c: Country, x: number, y
         break;
     }
   }
+  // cloth folds: a lighter band and a darker band
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(x + 4, y, 2, FLAG_H);
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(x + 12, y, 2, FLAG_H);
 }
 
 export function ensureFlagsTexture(scene: Phaser.Scene): void {
@@ -238,13 +358,14 @@ export function ensureFlagsTexture(scene: Phaser.Scene): void {
   COUNTRIES.forEach((c, i) => tex.add(c.code, 0, i * (FLAG_W + 1), 0, FLAG_W, FLAG_H));
 }
 
-/** pixel circle outline (midpoint algorithm), thickness 2 */
+/** pixel circle outline; the line gets thicker with the radius */
 function ring(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, colr: ColorIndex, clip?: (x: number, y: number) => boolean) {
   ctx.fillStyle = cssCol(colr);
+  const t = Math.max(2, Math.round(r / 6));
   for (let y = -r - 1; y <= r + 1; y++) {
     for (let x = -r - 1; x <= r + 1; x++) {
       const d = Math.sqrt(x * x + y * y);
-      if (d >= r - 1.2 && d <= r + 0.6) {
+      if (d >= r - t + 0.8 && d <= r + 0.6) {
         if (clip && !clip(cx + x, cy + y)) continue;
         ctx.fillRect(cx + x, cy + y, 1, 1);
       }

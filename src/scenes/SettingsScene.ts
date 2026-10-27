@@ -2,10 +2,10 @@
 // of keyboard keys and gamepad buttons. Everything is saved immediately.
 
 import Phaser from 'phaser';
-import { HEIGHT, WIDTH } from '../config';
+import { UI_H as HEIGHT, UI_W as WIDTH } from '../config';
 import { C, col } from '../render/palette';
 import { Menu, type MenuItem } from '../ui/menu';
-import { txt } from '../ui/text';
+import { title as titleTxt, txt, uiFrame } from '../ui/text';
 import { input } from '../core/input';
 import { DEFAULT_KEYS, DEFAULT_PAD, defaultSettings, getSave, save, settings, type Bindable, type Settings } from '../core/save';
 import { audio } from '../audio/engine';
@@ -43,12 +43,13 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(col(C.navy));
+    audio.arena(false);
+    uiFrame(this, C.navy);
     const title = { main: 'USTAWIENIA', keys: 'KLAWISZE', pad: 'PAD' }[this.page];
-    txt(this, 8, 6, title, C.gold);
-    this.prompt = txt(this, WIDTH - 8, 6, '', C.lime, 'right').setDepth(101);
+    titleTxt(this, WIDTH / 2, 10, title, 16, col(C.paleYellow), col(C.orange));
+    this.prompt = txt(this, WIDTH / 2, 32, '', C.lime, 'center').setDepth(101);
     const items = this.page === 'main' ? this.mainItems() : this.bindItems(this.page);
-    this.menu = new Menu(this, items, 14, 20, 292, 10, HEIGHT - 11);
+    this.menu = new Menu(this, items, 120, 46, 400, 19, HEIGHT - 16);
     this.menu.onBack = () => this.back();
   }
 
@@ -70,14 +71,14 @@ export class SettingsScene extends Phaser.Scene {
     const s = () => settings();
     const pct = (v: number) => `${Math.round(v * 100)}%`.padStart(4);
     const vol = (label: string, key: 'master' | 'music' | 'sfx' | 'crowd', hint: string): MenuItem => ({
-      label: () => `${label.padEnd(18)}← ${pct(s()[key])} →`,
+      label: () => `${label.padEnd(22)}← ${pct(s()[key])} →`,
       onLeft: () => this.change((x) => (x[key] = Math.max(0, Math.round((x[key] - 0.1) * 10) / 10))),
       onRight: () => this.change((x) => (x[key] = Math.min(1, Math.round((x[key] + 0.1) * 10) / 10))),
       hint,
     });
     const flag = (label: string, key: 'assist' | 'entryLine' | 'rhythmRibbon' | 'pro' | 'reduceFlashes' | 'vibration', hint: string): MenuItem => {
       const toggle = () => this.change((x) => (x[key] = !x[key]));
-      return { label: () => `${label.padEnd(18)}${s()[key] ? 'TAK' : 'NIE'}`, onSelect: toggle, onLeft: toggle, onRight: toggle, hint };
+      return { label: () => `${label.padEnd(22)}  ${s()[key] ? 'TAK' : 'NIE'}`, onSelect: toggle, onLeft: toggle, onRight: toggle, hint };
     };
     return [
       vol('GŁOŚNOŚĆ', 'master', 'Głośność całej gry'),
@@ -110,7 +111,7 @@ export class SettingsScene extends Phaser.Scene {
     const items: MenuItem[] = ORDER.map((b) => ({
       label: () => {
         const v = page === 'keys' ? s().keys[b].map(keyName) : s().pad[b].map((i) => `#${i}`);
-        return `${NAMES[b].padEnd(8)}${v.join('  ')}`;
+        return `${NAMES[b].padEnd(10)}${v.join('   ')}`;
       },
       onSelect: () => this.capture(page, b),
       hint: page === 'keys' ? 'AKCJA, potem nowy klawisz (Esc: anuluj)' : 'AKCJA, potem przycisk na padzie',
