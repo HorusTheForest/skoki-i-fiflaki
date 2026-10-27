@@ -288,6 +288,25 @@ export class DiverSim {
     return [ZONE_CENTER - w / 2, ZONE_CENTER + w / 2];
   }
 
+  /** the arrow (IN.LEFT / IN.RIGHT) pointing the way the diver spins on screen */
+  get spinArrow(): number {
+    return this.dive.rot > 0 ? IN.RIGHT : IN.LEFT;
+  }
+
+  /** the diver has tucked or piked at least once in this flight */
+  get hasBent(): boolean {
+    return this.tuckTime + this.pikeTime > 0;
+  }
+
+  /** ACTION near the water is a rip now (not a tuck) */
+  get ripArmed(): boolean {
+    return this.ripLocked;
+  }
+
+  get ripDone(): boolean {
+    return !Number.isNaN(this.ripPressT);
+  }
+
   /** fraction of the expected flight completed (0..1) */
   get flightProgress(): number {
     return this.phase === 'flight' ? Math.min(1, this.flightTime / this.flightDuration) : 0;
@@ -534,6 +553,8 @@ export class DiverSim {
     } else {
       let want: FlightPose = 'open';
       if (input & IN.ACTION) want = input & IN.DOWN ? 'pike' : 'tuck';
+      // the arrow pointing the way the diver spins curls into the dive's position
+      else if (input & this.spinArrow && this.dive.position !== 'A') want = this.dive.position === 'B' ? 'pike' : 'tuck';
       if (want !== this.pose) {
         this.pose = want;
         if (want === 'open') this.lastOpenT = this.t;
@@ -558,7 +579,7 @@ export class DiverSim {
     // the rotation pulls them down (smaller I, faster), the other one raises
     // them (bigger I, slower). Off once the rip window starts.
     const dir = (input & IN.RIGHT ? 1 : 0) - (input & IN.LEFT ? 1 : 0);
-    this.trim = this.ripLocked ? 0 : dir * Math.sign(this.L || 1);
+    this.trim = this.ripLocked || this.pose !== 'open' && dir * Math.sign(this.L || 1) > 0 ? 0 : dir * Math.sign(this.L || 1);
     if (this.trim !== 0) {
       const sh = this.trim > 0 ? Math.max(0, target.s - TRIM_ARMS) : Math.min(Math.PI, target.s + TRIM_ARMS);
       target = { ...target, s: sh };

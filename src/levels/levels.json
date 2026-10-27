@@ -32,7 +32,7 @@
    ],
    "ribbon": true,
    "modifiers": [],
-   "tip": "W locie TRZYMAJ AKCJĘ: kuczka kręci szybciej."
+   "tip": "W locie TRZYMAJ strzałkę obrotu (→): kuczka kręci szybciej."
   },
   {
    "id": 3,
@@ -49,7 +49,7 @@
    ],
    "ribbon": true,
    "modifiers": [],
-   "tip": "PUŚĆ AKCJĘ, żeby się otworzyć i zwolnić obrót."
+   "tip": "Trzymaj strzałkę obrotu, PUŚĆ ją, żeby się otworzyć."
   },
   {
    "id": 4,
@@ -103,7 +103,7 @@
    ],
    "ribbon": true,
    "modifiers": [],
-   "tip": "AKCJA + ↓ to pozycja łamana."
+   "tip": "Skok łamany: trzymaj strzałkę obrotu, ciało samo się złamie."
   },
   {
    "id": 7,

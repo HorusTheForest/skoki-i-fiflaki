@@ -33,6 +33,7 @@ import { shadowTxt, txt } from '../ui/text';
 import { FREESTYLE_DIVES } from '../levels/freestyle';
 import { level, type Modifier } from '../levels/levels';
 import { TvOverlay } from '../ui/tv';
+import { Coach } from '../ui/coach';
 import type { DiveResult } from './ResultsScene';
 
 export interface DiveConfig {
@@ -70,6 +71,8 @@ const HEP_T = 1.8;
 const RIBBON_SPEED = 180;
 const RIBBON_HIT_X = 112;
 const RIBBON_H = 24;
+/** centre line of the coach hint, under the dive card */
+const COACH_Y = 62;
 
 type Stage = 'intro' | 'live' | 'end';
 
@@ -115,6 +118,8 @@ export class DiveScene extends Phaser.Scene {
   private bigTimer = 0;
   private card: { destroy(): void }[] = [];
   private info!: ReturnType<typeof shadowTxt>;
+  private coach = new Coach();
+  private coachTxt!: Phaser.GameObjects.BitmapText;
   private ribbonIcons: { cue: Cue; box: Phaser.GameObjects.BitmapText }[] = [];
   private countIndex = 0;
   private flashTimer = 0;
@@ -183,7 +188,7 @@ export class DiveScene extends Phaser.Scene {
     this.arena = new Arena(this, cfg.arena, { backPlane: cfg.synchro ? BACK : undefined, activeHeight: cfg.height });
     this.world = this.add.graphics().setDepth(80);
     this.hud = this.add.graphics().setDepth(200).setScrollFactor(0);
-    this.label = shadowTxt(this, WIDTH / 2, 70, '', C.gold, 'center');
+    this.label = shadowTxt(this, WIDTH / 2, 82, '', C.gold, 'center');
     this.label.setDepth(210);
     this.bigShadow = this.add.bitmapText(WIDTH / 2 + 2, 102, FONT, '', 24).setOrigin(0.5, 0).setScrollFactor(0).setDepth(210).setTint(col(C.black));
     this.bigText = this.add.bitmapText(WIDTH / 2, 100, FONT, '', 24).setOrigin(0.5, 0).setScrollFactor(0).setDepth(211).setTint(col(C.gold));
@@ -191,6 +196,8 @@ export class DiveScene extends Phaser.Scene {
     this.syncLabel.setDepth(225);
     this.info = shadowTxt(this, 8, HEIGHT - RIBBON_H - 18, '', C.white);
     this.info.setDepth(210);
+    this.coach = new Coach();
+    this.coachTxt = this.add.bitmapText(WIDTH / 2, COACH_Y, FONT, '', 8).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(206);
     this.autoBot = /[?&]autoplay\b/.test(location.search) && !cfg.replay ? new Bot(PERFECT_BOT) : null;
     this.buildDivers();
     this.showCard();
@@ -323,7 +330,7 @@ export class DiveScene extends Phaser.Scene {
       if (line) lines.push([line, C.paleYellow]);
     } else if (this.cfg.choose && this.stage === 'intro') lines.push(['←→ grupa  ↑↓ skok  AKCJA start', C.lightGrey]);
     else if (this.cfg.mode !== 'replay' && this.stage === 'intro') lines.push([this.cfg.synchro ? 'Trzymaj AKCJĘ na 3-2-1, puść na HEP!' : 'Trzymaj AKCJĘ, puść w złotej strefie', C.lightGrey]);
-    if (this.cfg.mode !== 'replay' && this.stage === 'intro') lines.push(['W locie ←/→ zgodnie z obrotem: szybciej, przeciw: wolniej', C.lightGrey]);
+    if (this.cfg.mode !== 'replay' && this.stage === 'intro') lines.push([`W locie trzymaj ${d.rot > 0 ? '→' : '←'}: kręcisz się. Puść: otwierasz`, C.lightGrey]);
     // on the platform the card sits low, on a dark band, clear of the divers
     const intro = this.stage === 'intro' && this.cfg.mode !== 'replay';
     const y0 = intro ? HEIGHT - RIBBON_H - 12 - lines.length * 12 : 8;
@@ -716,6 +723,33 @@ export class DiveScene extends Phaser.Scene {
       g.lineStyle(1, col(inZone ? C.white : s.powerRising ? C.sky : C.salmon));
       g.strokeCircle(Math.round(cx), Math.round(cy), Math.round(r(p)));
     }
+    // which way the dive turns: a curved arrow over the diver until take-off
+    if (showAids && (s.phase === 'ready' || s.phase === 'charge')) {
+      const [cx, cy] = toScreen(FRONT, st.x, st.y + 1.5);
+      const cw = s.dive.rot > 0;
+      const r = 14;
+      const a0 = -Math.PI * 0.85;
+      const a1 = -Math.PI * 0.15;
+      const [from, to] = cw ? [a0, a1] : [a1, a0];
+      g.lineStyle(3, col(C.gold));
+      g.beginPath();
+      g.arc(Math.round(cx), Math.round(cy), r, from, to, !cw);
+      g.strokePath();
+      // arrow head along the tangent at the end of the arc
+      const ex = cx + Math.cos(to) * r;
+      const ey = cy + Math.sin(to) * r;
+      const tx = cw ? -Math.sin(to) : Math.sin(to);
+      const ty = cw ? Math.cos(to) : -Math.cos(to);
+      g.fillStyle(col(C.gold));
+      g.fillTriangle(
+        Math.round(ex + tx * 7),
+        Math.round(ey + ty * 7),
+        Math.round(ex - ty * 5),
+        Math.round(ey + tx * 5),
+        Math.round(ex + ty * 5),
+        Math.round(ey - tx * 5),
+      );
+    }
     // entry line
     const st2 = settings();
     if (showAids && s.lineVisible && st2.entryLine && !st2.pro && !this.has('noLine')) {
@@ -776,8 +810,9 @@ export class DiveScene extends Phaser.Scene {
         ic.box.setX(Math.round(x));
       }
     }
-    // training overlay: omega, I and predicted entry angle
     const s = this.player.sim;
+    this.drawCoach(g, s);
+    // training overlay: omega, I and predicted entry angle
     if (this.cfg.mode === 'training') {
       const w = (s.omega * 180) / Math.PI;
       const pred = s.phase === 'flight' ? s.predictEntryError() : 0;
@@ -789,6 +824,27 @@ export class DiveScene extends Phaser.Scene {
       this.info.set('');
     }
     this.tv?.update(dt, s.t);
+  }
+
+  /** what to press now, in a dark box under the top of the screen */
+  private drawCoach(g: Phaser.GameObjects.Graphics, sim: DiverSim): void {
+    const st = settings();
+    const on = st.coach && !st.pro && this.stage === 'live' && this.cfg.mode !== 'replay' && !this.cfg.tv;
+    const h = on ? this.coach.hint(sim) : null;
+    if (!h) {
+      this.coachTxt.setText('');
+      return;
+    }
+    const size = h.now ? 16 : 8;
+    this.coachTxt.setText(h.text).setFontSize(size).setTint(col(h.color));
+    const w = this.coachTxt.width + 16;
+    const bh = size + 10;
+    const x = Math.round(WIDTH / 2 - w / 2);
+    const y = Math.round(COACH_Y - bh / 2);
+    g.fillStyle(col(C.black), 0.7);
+    g.fillRect(x, y, Math.round(w), bh);
+    g.fillStyle(col(h.color));
+    g.fillRect(x, y + bh - 2, Math.round(w), 2);
   }
 
   // ---------------------------------------------------------------- camera
