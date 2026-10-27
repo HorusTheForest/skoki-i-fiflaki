@@ -76,7 +76,7 @@ export class SettingsScene extends Phaser.Scene {
       onRight: () => this.change((x) => (x[key] = Math.min(1, Math.round((x[key] + 0.1) * 10) / 10))),
       hint,
     });
-    const flag = (label: string, key: 'assist' | 'entryLine' | 'rhythmRibbon' | 'pro' | 'reduceFlashes' | 'vibration', hint: string): MenuItem => {
+    const flag = (label: string, key: 'assist' | 'entryLine' | 'rhythmRibbon' | 'pro' | 'reduceFlashes' | 'vibration' | 'coach', hint: string): MenuItem => {
       const toggle = () => this.change((x) => (x[key] = !x[key]));
       return { label: () => `${label.padEnd(22)}  ${s()[key] ? 'TAK' : 'NIE'}`, onSelect: toggle, onLeft: toggle, onRight: toggle, hint };
     };
@@ -85,6 +85,7 @@ export class SettingsScene extends Phaser.Scene {
       vol('MUZYKA', 'music', 'Chiptune w menu i na hali'),
       vol('EFEKTY', 'sfx', 'Wybicie, plusk, sygnały'),
       vol('PUBLICZNOŚĆ', 'crowd', 'Szum i doping trybun'),
+      flag('PODPOWIEDZI', 'coach', 'Napis, co nacisnąć teraz (wybicie, otwarcie, rip)'),
       flag('ASYSTA RAMION', 'assist', 'Ręce lekko korygują rotację po otwarciu'),
       flag('LINIA WEJŚCIA', 'entryLine', 'Pokazuje przewidywany kąt wejścia'),
       flag('WSTĘGA RYTMU', 'rhythmRibbon', 'Ruchy partnera na pasku u dołu'),

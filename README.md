@@ -30,15 +30,19 @@ Jeden przycisk AKCJA plus kierunki; wszystko można przemapować w Ustawieniach 
 
 | Faza | Wejście | Efekt |
 | --- | --- | --- |
-| Platforma | ← / → | kierunek skoku |
+| Platforma (freestyle) | ← / → , ↑ / ↓ | wybór grupy i skoku |
 | Wybicie | trzymaj AKCJĘ, puść w złotej strefie | PERFECT / GOOD / EARLY / LATE |
 | Synchro | trzymaj na 3-2-1, puść na HEP | wspólne wybicie z partnerem |
-| Lot | trzymaj AKCJĘ / puść | kuczka / otwarcie |
+| Przed wybiciem | złota zakrzywiona strzałka | pokazuje, w którą stronę obróci się skok |
+| Lot | trzymaj strzałkę obrotu (→ lub ←, jak pokazuje strzałka) / puść | zwinięcie (kuczka albo łamana, zależnie od skoku) i szybki obrót / otwarcie |
+| Lot | trzymaj AKCJĘ / puść | to samo co strzałka obrotu: kuczka / otwarcie |
 | Lot | AKCJA + ↓ | pozycja łamana |
 | Lot | ↑ (stuknięcie) | pół śruby (tylko w pozycji otwartej) |
-| Lot | trzymaj ← / → | ręce: strzałka zgodna z kierunkiem obrotu przyspiesza go (ręce w dół), przeciwna zwalnia (ręce w górę); działa do ok. 0,3 s przed wodą |
+| Lot | trzymaj strzałkę przeciwną do obrotu | ręce w górę: wolniejszy obrót (w pozycji otwartej strzałka obrotu opuszcza ręce i przyspiesza); działa do ok. 0,3 s przed wodą |
 | Przed wodą | AKCJA ok. 120 ms przed kontaktem | rip |
 | Ostatnie 200 ms | ← / → | korekta ±4° (kosztuje 0,5 pkt) |
+
+Podpowiedzi: w każdej fazie napis na górze ekranu mówi, co nacisnąć teraz („PUŚĆ!”, „TRZYMAJ →”, „RIP: AKCJA!”). Wezwania do działania pojawiają się ok. 0,18 s wcześniej, żeby zdążyć zareagować (`src/ui/coach.ts`). Test `tests/coach.test.ts` sprawdza, że gracz, który robi tylko to, co mówią napisy, czysto wchodzi do wody. Wyłączane w Ustawieniach (PODPOWIEDZI) i w trybie Pro.
 
 Dotyk: lewa/prawa krawędź ekranu to ←/→, dół to AKCJA + ↓, szybkie przesunięcie w górę to ↑, reszta ekranu to AKCJA.
 

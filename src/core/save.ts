@@ -19,6 +19,8 @@ export interface Settings {
   pro: boolean;
   reduceFlashes: boolean;
   vibration: boolean;
+  /** on-screen hints: what to press right now */
+  coach: boolean;
 }
 
 export interface LevelProgress {
@@ -73,6 +75,7 @@ export function defaultSettings(): Settings {
     pro: false,
     reduceFlashes: false,
     vibration: true,
+    coach: true,
   };
 }
 

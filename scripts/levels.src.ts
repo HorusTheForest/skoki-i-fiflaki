@@ -10,11 +10,11 @@ type Src = Pick<LevelDef, 'id' | 'name' | 'dives' | 'partner' | 'tip'> & Partial
 const L = (id: number, name: string, dives: string[], partner: string, opts: Partial<Src> & { tip: string }): Src => ({ id, name, dives, partner, ...opts });
 export const LEVEL_SOURCE: Src[] = [
   L(1, 'Wybicie', ['101C'], 'ola', { tip: 'Trzymaj AKCJĘ na 3-2-1, puść na HEP w złotej strefie.' }),
-  L(2, 'Kuczka', ['103C'], 'ola', { tip: 'W locie TRZYMAJ AKCJĘ: kuczka kręci szybciej.' }),
-  L(3, 'Otwarcie', ['201C'], 'ola', { tip: 'PUŚĆ AKCJĘ, żeby się otworzyć i zwolnić obrót.' }),
+  L(2, 'Kuczka', ['103C'], 'ola', { tip: 'W locie TRZYMAJ strzałkę obrotu (→): kuczka kręci szybciej.' }),
+  L(3, 'Otwarcie', ['201C'], 'ola', { tip: 'Trzymaj strzałkę obrotu, PUŚĆ ją, żeby się otworzyć.' }),
   L(4, 'Linia wejścia', ['203C'], 'ola', { tip: 'Otwórz się, gdy linia przy skoczku zrobi się zielona.' }),
   L(5, 'RIP', ['101B'], 'ola', { tip: 'Tuż przed wodą wciśnij AKCJĘ jeszcze raz: chwyt płaską dłonią.', unlock: { partner: 'kuba' } }),
-  L(6, 'Łamana', ['201B'], 'ola', { tip: 'AKCJA + ↓ to pozycja łamana.' }),
+  L(6, 'Łamana', ['201B'], 'ola', { tip: 'Skok łamany: trzymaj strzałkę obrotu, ciało samo się złamie.' }),
   L(7, 'Do wieży', ['301C'], 'kuba', { tip: 'Skok odwrotny kręci w stronę wieży. Wybij się w strefie!' }),
   L(8, 'Do środka', ['401C'], 'kuba', { tip: 'Tyłem do wody, obrót w przód. Pilnuj wybicia.' }),
   L(9, 'Nogami w dół', ['102C'], 'ola', { tip: 'Pełne salto kończy się wejściem nogami.' }),
