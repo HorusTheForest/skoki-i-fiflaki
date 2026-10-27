@@ -112,16 +112,19 @@ test('campaign level 1 is passed, saved and unlocks level 2', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
-test('the Odbicie prototype starts and bounces', async ({ page }) => {
+test('the Klif prototype starts and falls', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('./');
   await activeScene(page, 'Menu');
   await page.keyboard.press('Space');
-  await activeScene(page, 'Bounce');
+  await activeScene(page, 'Cliff');
   await page.keyboard.press('Space');
-  type Sim = { sim: { events: { type: string }[] } };
+  type Sim = { sim: { level: { depth: number }; y: number } };
   await page.waitForFunction(
-    () => ((window as GameWindow).__game!.scene.getScene('Bounce') as unknown as Sim).sim.events.some((e) => e.type === 'launch'),
+    () => {
+      const s = ((window as GameWindow).__game!.scene.getScene('Cliff') as unknown as Sim).sim;
+      return s.y < s.level.depth - 5;
+    },
     undefined,
     { timeout: 10_000 },
   );
