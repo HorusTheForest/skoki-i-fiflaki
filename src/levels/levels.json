@@ -1,0 +1,952 @@
+{
+ "levels": [
+  {
+   "id": 1,
+   "name": "Wybicie",
+   "dives": [
+    "101C"
+   ],
+   "partner": "ola",
+   "syncMin": 0,
+   "scoreMin": 13.5,
+   "stars": [
+    16.5,
+    18.9
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Trzymaj AKCJĘ na 3-2-1, puść na HEP w złotej strefie."
+  },
+  {
+   "id": 2,
+   "name": "Kuczka",
+   "dives": [
+    "103C"
+   ],
+   "partner": "ola",
+   "syncMin": 0,
+   "scoreMin": 20.3,
+   "stars": [
+    24.8,
+    28.4
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "W locie TRZYMAJ AKCJĘ: kuczka kręci szybciej."
+  },
+  {
+   "id": 3,
+   "name": "Otwarcie",
+   "dives": [
+    "201C"
+   ],
+   "partner": "ola",
+   "syncMin": 0,
+   "scoreMin": 16.2,
+   "stars": [
+    19.8,
+    22.7
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "PUŚĆ AKCJĘ, żeby się otworzyć i zwolnić obrót."
+  },
+  {
+   "id": 4,
+   "name": "Linia wejścia",
+   "dives": [
+    "203C"
+   ],
+   "partner": "ola",
+   "syncMin": 0,
+   "scoreMin": 23,
+   "stars": [
+    28.1,
+    32.1
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Otwórz się, gdy linia przy skoczku zrobi się zielona."
+  },
+  {
+   "id": 5,
+   "name": "RIP",
+   "dives": [
+    "101B"
+   ],
+   "partner": "ola",
+   "syncMin": 0,
+   "scoreMin": 14.9,
+   "stars": [
+    18.2,
+    20.8
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Tuż przed wodą wciśnij AKCJĘ jeszcze raz: chwyt płaską dłonią.",
+   "unlock": {
+    "partner": "kuba"
+   }
+  },
+  {
+   "id": 6,
+   "name": "Łamana",
+   "dives": [
+    "201B"
+   ],
+   "partner": "ola",
+   "syncMin": 6,
+   "scoreMin": 21.5,
+   "stars": [
+    25.4,
+    28.5
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "AKCJA + ↓ to pozycja łamana."
+  },
+  {
+   "id": 7,
+   "name": "Do wieży",
+   "dives": [
+    "301C"
+   ],
+   "partner": "kuba",
+   "syncMin": 6,
+   "scoreMin": 21.8,
+   "stars": [
+    25.7,
+    28.8
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Skok odwrotny kręci w stronę wieży. Wybij się w strefie!"
+  },
+  {
+   "id": 8,
+   "name": "Do środka",
+   "dives": [
+    "401C"
+   ],
+   "partner": "kuba",
+   "syncMin": 6,
+   "scoreMin": 18.7,
+   "stars": [
+    22,
+    24.6
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Tyłem do wody, obrót w przód. Pilnuj wybicia."
+  },
+  {
+   "id": 9,
+   "name": "Nogami w dół",
+   "dives": [
+    "102C"
+   ],
+   "partner": "ola",
+   "syncMin": 6,
+   "scoreMin": 24.1,
+   "stars": [
+    28.3,
+    31.6
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Pełne salto kończy się wejściem nogami."
+  },
+  {
+   "id": 10,
+   "name": "Finał juniorów",
+   "dives": [
+    "101B",
+    "201C",
+    "401C"
+   ],
+   "partner": "kuba",
+   "syncMin": 6,
+   "scoreMin": 59.3,
+   "stars": [
+    69.5,
+    77.6
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Trzy serie. Podium wygrywa.",
+   "unlock": {
+    "partner": "mila",
+    "outfit": 1
+   },
+   "rivals": 5
+  },
+  {
+   "id": 11,
+   "name": "Półtora",
+   "dives": [
+    "103B"
+   ],
+   "partner": "kuba",
+   "syncMin": 6,
+   "scoreMin": 28.3,
+   "stars": [
+    33.1,
+    36.9
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Łamana kręci wolniej niż kuczka: otwórz później."
+  },
+  {
+   "id": 12,
+   "name": "Półtora w tył",
+   "dives": [
+    "203C"
+   ],
+   "partner": "mila",
+   "syncMin": 6,
+   "scoreMin": 30.4,
+   "stars": [
+    35.5,
+    39.6
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Mila wybija się późno. Słuchaj HEP i patrz na wstęgę."
+  },
+  {
+   "id": 13,
+   "name": "Odwrotne półtora",
+   "dives": [
+    "303C"
+   ],
+   "partner": "mila",
+   "syncMin": 6,
+   "scoreMin": 32.6,
+   "stars": [
+    38,
+    42.4
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Rotacja do wieży: odważnie od platformy."
+  },
+  {
+   "id": 14,
+   "name": "Do środka półtora",
+   "dives": [
+    "403C"
+   ],
+   "partner": "mila",
+   "syncMin": 6,
+   "scoreMin": 29.4,
+   "stars": [
+    34.2,
+    38
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Linia wejścia pokaże moment otwarcia."
+  },
+  {
+   "id": 15,
+   "name": "Wieczorny skok",
+   "dives": [
+    "203B"
+   ],
+   "partner": "kuba",
+   "syncMin": 6,
+   "scoreMin": 33.5,
+   "stars": [
+    38.9,
+    43.2
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "night"
+   ],
+   "tip": "Hala nocna. Łamana w tył.",
+   "unlock": {
+    "partner": "igor",
+    "arena": "night"
+   }
+  },
+  {
+   "id": 16,
+   "name": "Pierwsza śruba",
+   "dives": [
+    "5112D"
+   ],
+   "partner": "igor",
+   "syncMin": 6.5,
+   "scoreMin": 27.9,
+   "stars": [
+    32.4,
+    36
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "↑ = pół śruby. Śruby kręcą się tylko w pozycji otwartej."
+  },
+  {
+   "id": 17,
+   "name": "Śruba w przód",
+   "dives": [
+    "5122D"
+   ],
+   "partner": "igor",
+   "syncMin": 6.5,
+   "scoreMin": 35.6,
+   "stars": [
+    41.3,
+    45.9
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Otwórz się, potem stuknij ↑ dwa razy."
+  },
+  {
+   "id": 18,
+   "name": "Śruba w tył",
+   "dives": [
+    "5221D"
+   ],
+   "partner": "igor",
+   "syncMin": 6.5,
+   "scoreMin": 34,
+   "stars": [
+    39.4,
+    43.7
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Pół śruby w skoku w tył."
+  },
+  {
+   "id": 19,
+   "name": "Łamane odwrotne",
+   "dives": [
+    "303B"
+   ],
+   "partner": "mila",
+   "syncMin": 6.5,
+   "scoreMin": 36.1,
+   "stars": [
+    41.8,
+    46.4
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "night"
+   ],
+   "tip": "Łamana, rotacja do wieży."
+  },
+  {
+   "id": 20,
+   "name": "Finał krajowy",
+   "dives": [
+    "203B",
+    "5122D",
+    "403C"
+   ],
+   "partner": "igor",
+   "syncMin": 6.5,
+   "scoreMin": 101.4,
+   "stars": [
+    117.3,
+    130
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Trzy serie, mocniejsi rywale.",
+   "unlock": {
+    "partner": "zoja",
+    "outfit": 2
+   },
+   "rivals": 6
+  },
+  {
+   "id": 21,
+   "name": "Półtora ze śrubą",
+   "dives": [
+    "5132D"
+   ],
+   "partner": "zoja",
+   "syncMin": 6.5,
+   "scoreMin": 40.5,
+   "stars": [
+    46.8,
+    51.8
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Zoja jest precyzyjna jak metronom."
+  },
+  {
+   "id": 22,
+   "name": "Śruba w tył 2",
+   "dives": [
+    "5231D"
+   ],
+   "partner": "zoja",
+   "syncMin": 6.5,
+   "scoreMin": 38.8,
+   "stars": [
+    44.8,
+    49.6
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Salto w tył z półtorej śruby."
+  },
+  {
+   "id": 23,
+   "name": "Łamane do środka",
+   "dives": [
+    "403B"
+   ],
+   "partner": "zoja",
+   "syncMin": 6.5,
+   "scoreMin": 33.2,
+   "stars": [
+    38.3,
+    42.4
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "night"
+   ],
+   "tip": "Do środka, łamana."
+  },
+  {
+   "id": 24,
+   "name": "Bez wstęgi",
+   "dives": [
+    "103B"
+   ],
+   "partner": "ola",
+   "syncMin": 6.5,
+   "scoreMin": 31.5,
+   "stars": [
+    36.3,
+    40.1
+   ],
+   "ribbon": false,
+   "modifiers": [],
+   "tip": "Wstęgi nie ma. Patrz na partnera i słuchaj HEP."
+  },
+  {
+   "id": 25,
+   "name": "Plener",
+   "dives": [
+    "5132D"
+   ],
+   "partner": "zoja",
+   "syncMin": 6.5,
+   "scoreMin": 41.6,
+   "stars": [
+    47.9,
+    52.9
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "outdoor"
+   ],
+   "tip": "Basen na otwartym powietrzu, bez wstęgi.",
+   "unlock": {
+    "partner": "tymon",
+    "arena": "outdoor"
+   }
+  },
+  {
+   "id": 26,
+   "name": "Dwa i pół",
+   "dives": [
+    "105C"
+   ],
+   "partner": "ola",
+   "syncMin": 7,
+   "scoreMin": 41.6,
+   "stars": [
+    47.9,
+    52.9
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "2½ salta: kuczka i późne otwarcie."
+  },
+  {
+   "id": 27,
+   "name": "Dwa i pół w tył",
+   "dives": [
+    "205C"
+   ],
+   "partner": "tymon",
+   "syncMin": 7,
+   "scoreMin": 45.8,
+   "stars": [
+    52.7,
+    58.3
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Tymon skacze późno i mocno."
+  },
+  {
+   "id": 28,
+   "name": "Odwrotne 2½",
+   "dives": [
+    "305C"
+   ],
+   "partner": "tymon",
+   "syncMin": 7,
+   "scoreMin": 48.2,
+   "stars": [
+    55.4,
+    61.1
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "outdoor"
+   ],
+   "tip": "Do wieży, 2½ salta."
+  },
+  {
+   "id": 29,
+   "name": "Do środka 2½",
+   "dives": [
+    "405C"
+   ],
+   "partner": "zoja",
+   "syncMin": 7,
+   "scoreMin": 44.4,
+   "stars": [
+    51,
+    56.3
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Do środka, 2½ salta."
+  },
+  {
+   "id": 30,
+   "name": "Finał kontynentalny",
+   "dives": [
+    "105C",
+    "205C",
+    "305C",
+    "405C"
+   ],
+   "partner": "zoja",
+   "syncMin": 7,
+   "scoreMin": 183,
+   "stars": [
+    210,
+    231.6
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Cztery serie.",
+   "unlock": {
+    "partner": "lena",
+    "outfit": 3
+   },
+   "rivals": 7
+  },
+  {
+   "id": 31,
+   "name": "Łamane 2½",
+   "dives": [
+    "105B"
+   ],
+   "partner": "tymon",
+   "syncMin": 7,
+   "scoreMin": 47.1,
+   "stars": [
+    54,
+    59.5
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "shortRibbon"
+   ],
+   "tip": "Wstęga pokazuje tylko najbliższe ruchy."
+  },
+  {
+   "id": 32,
+   "name": "Łamane 2½ w tył",
+   "dives": [
+    "205B"
+   ],
+   "partner": "lena",
+   "syncMin": 7,
+   "scoreMin": 51.5,
+   "stars": [
+    59,
+    65
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "shortRibbon",
+    "night"
+   ],
+   "tip": "Lena zawsze trafia w pion."
+  },
+  {
+   "id": 33,
+   "name": "Trzy i pół",
+   "dives": [
+    "107C"
+   ],
+   "partner": "lena",
+   "syncMin": 7,
+   "scoreMin": 56,
+   "stars": [
+    64.1,
+    70.6
+   ],
+   "ribbon": false,
+   "modifiers": [],
+   "tip": "Bez wstęgi. Patrz na Lenę."
+  },
+  {
+   "id": 34,
+   "name": "Trzy i pół w tył",
+   "dives": [
+    "207C"
+   ],
+   "partner": "lena",
+   "syncMin": 7,
+   "scoreMin": 60.5,
+   "stars": [
+    69.2,
+    76.2
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "outdoor"
+   ],
+   "tip": "3½ salta w tył."
+  },
+  {
+   "id": 35,
+   "name": "Bez linii",
+   "dives": [
+    "307C"
+   ],
+   "partner": "lena",
+   "syncMin": 7,
+   "scoreMin": 63,
+   "stars": [
+    72,
+    79.2
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "noLine"
+   ],
+   "tip": "Linia wejścia wyłączona. Czuj obrót.",
+   "unlock": {
+    "partner": "bruno",
+    "outfit": 4
+   }
+  },
+  {
+   "id": 36,
+   "name": "Kombinacja I",
+   "dives": [
+    "5152B"
+   ],
+   "partner": "igor",
+   "syncMin": 7.5,
+   "scoreMin": 63,
+   "stars": [
+    72,
+    79.2
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "2½ salta i śruba."
+  },
+  {
+   "id": 37,
+   "name": "Kombinacja II",
+   "dives": [
+    "5253B"
+   ],
+   "partner": "igor",
+   "syncMin": 7.5,
+   "scoreMin": 74,
+   "stars": [
+    84.5,
+    92.9
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "W tył: 2½ salta, 1½ śruby."
+  },
+  {
+   "id": 38,
+   "name": "Kombinacja III",
+   "dives": [
+    "5353B"
+   ],
+   "partner": "igor",
+   "syncMin": 7.5,
+   "scoreMin": 76.6,
+   "stars": [
+    87.4,
+    96
+   ],
+   "ribbon": true,
+   "modifiers": [
+    "night"
+   ],
+   "tip": "Odwrotny: 2½ salta, 1½ śruby."
+  },
+  {
+   "id": 39,
+   "name": "Do środka 3½",
+   "dives": [
+    "407C"
+   ],
+   "partner": "bruno",
+   "syncMin": 7.5,
+   "scoreMin": 59.9,
+   "stars": [
+    68.3,
+    75
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine"
+   ],
+   "tip": "Bruno otwiera bardzo wcześnie."
+  },
+  {
+   "id": 40,
+   "name": "Finał świata",
+   "dives": [
+    "107C",
+    "5253B",
+    "307C",
+    "205B"
+   ],
+   "partner": "lena",
+   "syncMin": 7.5,
+   "scoreMin": 251.9,
+   "stars": [
+    287,
+    315.1
+   ],
+   "ribbon": true,
+   "modifiers": [],
+   "tip": "Cztery serie, światowa czołówka.",
+   "unlock": {
+    "outfit": 5
+   },
+   "rivals": 8
+  },
+  {
+   "id": 41,
+   "name": "Dwie śruby",
+   "dives": [
+    "5154B"
+   ],
+   "partner": "zoja",
+   "syncMin": 7.5,
+   "scoreMin": 80.2,
+   "stars": [
+    91.3,
+    100.1
+   ],
+   "ribbon": false,
+   "modifiers": [],
+   "tip": "2½ salta, 2 śruby."
+  },
+  {
+   "id": 42,
+   "name": "Dwie i pół śruby",
+   "dives": [
+    "5255B"
+   ],
+   "partner": "igor",
+   "syncMin": 7.5,
+   "scoreMin": 91.6,
+   "stars": [
+    104.2,
+    114.2
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine"
+   ],
+   "tip": "W tył: 2½ śruby."
+  },
+  {
+   "id": 43,
+   "name": "Odwrotne śruby",
+   "dives": [
+    "5355B"
+   ],
+   "partner": "lena",
+   "syncMin": 7.5,
+   "scoreMin": 94.3,
+   "stars": [
+    107.2,
+    117.5
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine",
+    "outdoor"
+   ],
+   "tip": "Odwrotny z 2½ śruby."
+  },
+  {
+   "id": 44,
+   "name": "3½ ze śrubą",
+   "dives": [
+    "5172B"
+   ],
+   "partner": "tymon",
+   "syncMin": 7.5,
+   "scoreMin": 83.9,
+   "stars": [
+    95.3,
+    104.4
+   ],
+   "ribbon": false,
+   "modifiers": [],
+   "tip": "3½ salta i pół śruby."
+  },
+  {
+   "id": 45,
+   "name": "Łamane 3½ w tył",
+   "dives": [
+    "207B"
+   ],
+   "partner": "bruno",
+   "syncMin": 7.5,
+   "scoreMin": 71,
+   "stars": [
+    80.6,
+    88.3
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine",
+    "night"
+   ],
+   "tip": "Bez wstęgi, bez linii.",
+   "unlock": {
+    "outfit": 6
+   }
+  },
+  {
+   "id": 46,
+   "name": "Cztery i pół",
+   "dives": [
+    "109C"
+   ],
+   "partner": "zoja",
+   "syncMin": 8,
+   "scoreMin": 73.3,
+   "stars": [
+    83.2,
+    91.1
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine"
+   ],
+   "tip": "Granica fizyki: 4½ salta."
+  },
+  {
+   "id": 47,
+   "name": "4½ w tył",
+   "dives": [
+    "209C"
+   ],
+   "partner": "lena",
+   "syncMin": 8,
+   "scoreMin": 78.8,
+   "stars": [
+    89.3,
+    97.6
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine",
+    "noAssist"
+   ],
+   "tip": "Bez asysty ramion."
+  },
+  {
+   "id": 48,
+   "name": "4½ łamane",
+   "dives": [
+    "109B"
+   ],
+   "partner": "tymon",
+   "syncMin": 8,
+   "scoreMin": 84.4,
+   "stars": [
+    95.5,
+    103.2
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine"
+   ],
+   "tip": "Łamana przy 4½ salta."
+  },
+  {
+   "id": 49,
+   "name": "Śruby na granicy",
+   "dives": [
+    "5257B"
+   ],
+   "partner": "igor",
+   "syncMin": 8,
+   "scoreMin": 113.2,
+   "stars": [
+    127.9,
+    136.7
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine",
+    "outdoor"
+   ],
+   "tip": "2½ salta, 3½ śruby."
+  },
+  {
+   "id": 50,
+   "name": "Wielki finał",
+   "dives": [
+    "109C",
+    "5255B",
+    "307B",
+    "209C",
+    "5257B"
+   ],
+   "partner": "lena",
+   "syncMin": 8,
+   "scoreMin": 449.3,
+   "stars": [
+    506.9,
+    535.7
+   ],
+   "ribbon": false,
+   "modifiers": [
+    "noLine"
+   ],
+   "tip": "Pięć serii o złoto.",
+   "unlock": {
+    "outfit": 7
+   },
+   "rivals": 8
+  }
+ ]
+}

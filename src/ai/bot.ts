@@ -22,6 +22,8 @@ export interface BotParams {
   twistDelay: number;
   /** use the save when the predicted error exceeds this (deg); Infinity = never */
   saveAbove: number;
+  /** open at this absolute sim time instead of reading the entry line (margin tests) */
+  openAt?: number;
 }
 
 export const PERFECT_BOT: BotParams = {
@@ -77,6 +79,11 @@ export class Bot {
     }
   }
 
+  /** time the bot opened (after a run) */
+  get openedAt(): number {
+    return this.openedT;
+  }
+
   private flight(sim: DiverSim, bend: number): number {
     if (this.takeoffT < 0) this.takeoffT = sim.t;
     const since = sim.t - this.takeoffT;
@@ -91,7 +98,9 @@ export class Bot {
         const step = Number.isFinite(this.prevErr) && err > -900 ? err - this.prevErr : 0;
         if (err > -900) this.prevErr = err;
         const forced = ttc <= referenceOpenTime(d) * 0.55;
-        if (this.bent && (err >= this.p.openBias - step / 2 || forced)) {
+        const timed = this.p.openAt !== undefined;
+        const lineSaysOpen = timed ? sim.t >= this.p.openAt! - 1e-9 : err >= this.p.openBias - step / 2;
+        if (this.bent && (lineSaysOpen || (forced && !timed))) {
           this.openedT = sim.t;
         } else {
           this.bent = true;

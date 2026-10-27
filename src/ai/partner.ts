@@ -30,7 +30,7 @@ export const PARTNERS: Partner[] = [
   { id: 'mila', name: 'Mila Kropla', country: 'CZE', look: { outfit: 3, hair: C.gold, skin: 1 }, tempo: 0.025, jitter: 0.015, openBias: -2, ripLead: 0.07, style: 'Wybija się późno, otwiera wcześnie.' },
   { id: 'igor', name: 'Igor Śruba', country: 'UKR', look: { outfit: 4, hair: C.darkBrown, skin: 0 }, tempo: 0, jitter: 0.025, openBias: 0.5, ripLead: 0.05, style: 'Mistrz śrub, ale nierówny w tempie.' },
   { id: 'zoja', name: 'Zoja Rip', country: 'GER', look: { outfit: 2, hair: C.orange, skin: 1 }, tempo: -0.01, jitter: 0.01, openBias: 0, ripLead: 0.06, style: 'Precyzyjna jak metronom.' },
-  { id: 'tymon', name: 'Tymon Salto', country: 'ITA', look: { outfit: 7, hair: C.black, skin: 2 }, tempo: 0.035, jitter: 0.03, openBias: 2.5, ripLead: 0.04, style: 'Showman: późno, mocno, efektownie.' },
+  { id: 'tymon', name: 'Tymon Salto', country: 'ITA', look: { outfit: 7, hair: C.black, skin: 2 }, tempo: 0.025, jitter: 0.02, openBias: 2.5, ripLead: 0.04, style: 'Showman: późno, mocno, efektownie.' },
   { id: 'lena', name: 'Lena Pion', country: 'SWE', look: { outfit: 5, hair: C.paleYellow, skin: 1 }, tempo: -0.02, jitter: 0.008, openBias: -0.5, ripLead: 0.065, style: 'Chłodna głowa, zawsze w pionie.' },
   { id: 'bruno', name: 'Bruno Bryza', country: 'BRA', look: { outfit: 6, hair: C.darkBrown, skin: 2 }, tempo: 0.015, jitter: 0.02, openBias: -3, ripLead: 0.075, style: 'Luz i rytm. Otwiera bardzo wcześnie.' },
 ];
@@ -43,7 +43,7 @@ export function humanize(p: Partner, seed: number): BotParams {
   const rng = new Rng(seed);
   return {
     ...PERFECT_BOT,
-    releaseDelay: p.tempo + rng.gauss() * p.jitter,
+    releaseDelay: Math.max(-0.06, Math.min(0.06, p.tempo + rng.gauss() * p.jitter)),
     bendDelay: 0.06 + Math.abs(rng.gauss()) * p.jitter,
     openBias: p.openBias + rng.gauss() * 1.2,
     ripLead: Math.max(0.01, p.ripLead + rng.gauss() * p.jitter * 0.7),

@@ -56,7 +56,7 @@ export function execution(r: DiveRecord): Execution {
   const tk = r.takeoff;
   if (tk && tk.error !== 0) add('Wybicie poza strefą', clamp(Math.abs(tk.error) * 9, 0, 1.5));
   if (e.height < 0.6) add('Za niski lot', clamp((0.6 - e.height) * 4, 0, 1.5));
-  if (e.clearance < 0.45) add('Za blisko platformy', clamp((0.45 - e.clearance) * 5, 0, 2));
+  if (e.clearance < 0.3) add('Za blisko platformy', clamp((0.3 - e.clearance) * 6, 0, 2));
   if (e.distance > 3.6) add('Za daleko od wieży', clamp((e.distance - 3.6) * 1.2, 0, 1.5));
 
   const pos = r.dive.position;

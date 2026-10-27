@@ -344,9 +344,17 @@ export class DiverSim {
     let theta = this.theta;
     let f = this.frame;
     for (let i = 0; i < n; i++) {
-      pdStep(j, jv, i < nSwitch ? alt : entry);
+      const target = i < nSwitch ? alt : entry;
+      pdStep(j, jv, target);
       f = bodyFrame(j);
-      theta += (this.L / inertiaOfFrame(f)) * DT;
+      const inv = this.L / inertiaOfFrame(f);
+      theta += inv * DT;
+      // once the joints have settled the shape (and so omega) stays constant until the next switch
+      if (settled(j, jv, target)) {
+        const until = i < nSwitch ? Math.min(n, nSwitch) : n;
+        theta += inv * DT * (until - 1 - i);
+        i = until - 1;
+      }
     }
     const sg = Math.cos(this.psi) >= 0 ? this.dive.facing : -this.dive.facing;
     return this.rotationError(theta + sg * axisDir(f));
@@ -595,7 +603,8 @@ export class DiverSim {
             return;
           }
         }
-        if (this.flightTime >= 0.25) {
+        // clearance: distance to the platform edge for body parts at or below its level
+        if (this.flightTime >= 0.25 && py < top + 0.3) {
           const d = px >= 0 ? Math.hypot(px, Math.max(0, py - top)) : Math.max(0, py - top);
           this.clearance = Math.min(this.clearance, d);
         }
@@ -700,6 +709,13 @@ export class DiverSim {
   }
 }
 
+function settled(j: Joints, jv: Joints, target: Joints): boolean {
+  for (const n of JOINT_NAMES) {
+    if (Math.abs(target[n] - j[n]) > 2e-4 || Math.abs(jv[n]) > 2e-3) return false;
+  }
+  return true;
+}
+
 export function pdStep(j: Joints, jv: Joints, target: Joints): void {
   const k = JOINT_WN * JOINT_WN;
   const d = 2 * JOINT_WN;
@@ -732,7 +748,7 @@ export function idealAngularMomentum(setup: DiveSetup): number {
   const key = `${setup.dive.code}@${setup.height}`;
   const hit = idealCache.get(key);
   if (hit !== undefined) return hit;
-  const probeSetup: DiveSetup = { ...setup, hepTime: undefined, idealL: 1 };
+  const probeSetup: DiveSetup = { ...setup, hepTime: undefined, idealL: 1, assist: false };
   const sim = new DiverSim(probeSetup, { probeL: 1 });
   const d = setup.dive;
   const bend = d.position === 'A' ? 0 : d.position === 'B' ? IN.ACTION | IN.DOWN : IN.ACTION;

@@ -8,9 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --exclude tests/levels.bot.test.ts",
     "test:e2e": "playwright test",
-    "bot": "vitest run tests/levels.bot.test.ts"
+    "bot": "vitest run tests/levels.bot.test.ts",
+    "levels:gen": "WRITE_LEVELS=1 vitest run tests/levels.data.test.ts"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.3.0",
