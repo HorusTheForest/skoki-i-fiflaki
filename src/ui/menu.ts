@@ -4,7 +4,7 @@ import Phaser from 'phaser';
 import { BACK, input } from '../core/input';
 import { IN } from '../physics/diver';
 import { audio } from '../audio/engine';
-import { C, col } from '../render/palette';
+import { C, col, mix } from '../render/palette';
 import { txt } from './text';
 
 export interface MenuItem {
@@ -28,6 +28,7 @@ export class Menu {
   onBack: (() => void) | null = null;
   onMove: ((i: number) => void) | null = null;
   private hintText: Phaser.GameObjects.BitmapText | null = null;
+  private readonly cam: Phaser.Cameras.Scene2D.Camera;
 
   constructor(scene: Phaser.Scene, items: MenuItem[], x: number, y: number, w: number, lineH = 12, hintY?: number) {
     this.items = items;
@@ -35,11 +36,12 @@ export class Menu {
     this.y = y;
     this.w = w;
     this.lineH = lineH;
+    this.cam = scene.cameras.main;
     this.g = scene.add.graphics().setScrollFactor(0).setDepth(100);
     items.forEach((_, i) => {
-      this.texts.push(txt(scene, x + 10, y + i * lineH, '', C.white).setDepth(101));
+      this.texts.push(txt(scene, x + 12, y + i * lineH + Math.floor((lineH - 8) / 2), '', C.white).setDepth(101));
     });
-    if (hintY !== undefined) this.hintText = txt(scene, scene.scale.width / 2, hintY, '', C.lightGrey, 'center').setDepth(101);
+    if (hintY !== undefined) this.hintText = txt(scene, scene.cameras.main.width / 2, hintY, '', C.lightGrey, 'center').setDepth(101);
     while (this.items[this.index]?.disabled && this.index < items.length - 1) this.index++;
     this.refresh();
   }
@@ -53,9 +55,17 @@ export class Menu {
       t.setText(label);
       t.setTint(col(it.disabled ? C.grey : sel ? C.gold : C.white));
       if (sel) {
-        this.g.fillStyle(col(C.gold));
+        // highlight bar fading to the right, plus a cursor
         const yy = this.y + i * this.lineH;
-        this.g.fillRect(this.x + 2, yy + 2, 4, 4);
+        const steps = 8;
+        for (let k = 0; k < steps; k++) {
+          this.g.fillStyle(mix(col(C.deepBlue), col(C.navy), k / steps));
+          this.g.fillRect(this.x + Math.round((k * this.w) / steps), yy, Math.ceil(this.w / steps), this.lineH - 1);
+        }
+        this.g.fillStyle(col(C.gold));
+        this.g.fillRect(this.x, yy, 2, this.lineH - 1);
+        const cy = yy + Math.floor(this.lineH / 2);
+        this.g.fillTriangle(this.x + 4, cy - 3, this.x + 4, cy + 3, this.x + 7, cy);
       }
     });
     this.hintText?.setText(this.items[this.index]?.hint ?? '');
@@ -104,10 +114,12 @@ export class Menu {
       this.onBack();
       return true;
     }
-    const click = inp.takeClick();
+    const raw = inp.takeClick();
+    // clicks come in buffer coordinates; menus live in the centred camera
+    const click = raw && { x: raw.x - this.cam.x, y: raw.y - this.cam.y };
     if (click) {
       audio.unlock();
-      const i = Math.floor((click.y - this.y + 2) / this.lineH);
+      const i = Math.floor((click.y - this.y) / this.lineH);
       if (click.x >= this.x - 4 && click.x <= this.x + this.w && i >= 0 && i < this.items.length) {
         const target = this.items[i]!;
         if (target.disabled) return false;

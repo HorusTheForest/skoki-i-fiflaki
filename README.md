@@ -1,6 +1,6 @@
 # Skoki Olimpijskie: Synchro 10 m
 
-Przeglądarkowa gra 8-bit o skokach synchronicznych z wieży 10 m. Wybicie, rotacja zależna od pozycji ciała, wejście do wody z „rip”, partner AI i 11 sędziów. Statyczne pliki, hosting na GitHub Pages.
+Przeglądarkowa gra w stylu 16-bit o skokach synchronicznych z wieży 10 m. Wybicie, rotacja zależna od pozycji ciała, wejście do wody z „rip”, partner AI i 11 sędziów. Statyczne pliki, hosting na GitHub Pages.
 
 ## Uruchomienie lokalne
 
@@ -36,6 +36,7 @@ Jeden przycisk AKCJA plus kierunki; wszystko można przemapować w Ustawieniach 
 | Lot | trzymaj AKCJĘ / puść | kuczka / otwarcie |
 | Lot | AKCJA + ↓ | pozycja łamana |
 | Lot | ↑ (stuknięcie) | pół śruby (tylko w pozycji otwartej) |
+| Lot | trzymaj ← / → | ręce: strzałka zgodna z kierunkiem obrotu przyspiesza go (ręce w dół), przeciwna zwalnia (ręce w górę); działa do ok. 0,3 s przed wodą |
 | Przed wodą | AKCJA ok. 120 ms przed kontaktem | rip |
 | Ostatnie 200 ms | ← / → | korekta ±4° (kosztuje 0,5 pkt) |
 
@@ -51,7 +52,7 @@ Dotyk: lewa/prawa krawędź ekranu to ←/→, dół to AKCJA + ↓, szybkie prz
 
 ## Jak to działa
 
-- Fizyka (`src/physics/diver.ts`): stały krok 120 Hz z akumulatorem, renderowanie z interpolacją, pełny determinizm. Środek masy leci balistycznie, moment pędu L jest ustalany przy wybiciu, a ω = L / I(pozy). Stawy prowadzą regulatory PD (ok. 160 ms). Grawitacja jest celowo niższa od ziemskiej (6,5 m/s²), żeby skok był czytelny w 8-bit.
+- Fizyka (`src/physics/diver.ts`): stały krok 120 Hz z akumulatorem, renderowanie z interpolacją, pełny determinizm. Środek masy leci balistycznie, moment pędu L jest ustalany przy wybiciu, a ω = L / I(pozy). Stawy prowadzą regulatory PD (ok. 160 ms). Grawitacja jest celowo niższa od ziemskiej (6,5 m/s²), żeby skok był czytelny. ←/→ w locie przesuwają cel barku, więc zmieniają moment bezwładności, a z nim prędkość obrotu; L dalej jest stałe.
 - Ragdoll (`src/physics/ragdoll.ts`, Planck.js): uderzenie w platformę, płaskie wejście, wejście w kuczce. Każdy segment dostaje prędkość v + ω×r.
 - Woda (`src/physics/water.ts`): siatka sprężyn 1D, kolumna na piksel.
 - Punktacja (`src/scoring`): synchro 11 sędziów (3 + 3 + 5), skreślanie skrajnych, suma × WT × 0,6; indywidualnie 7 sędziów, suma 3 × WT. Noty wynikają z mierzalnych parametrów skoku plus seedowany rozrzut.
@@ -66,7 +67,11 @@ Dotyk: lewa/prawa krawędź ekranu to ←/→, dół to AKCJA + ↓, szybkie prz
 
 ## Grafika i dźwięk
 
-Wszystko generowane w kodzie: paleta 32 kolorów (`src/render/palette.ts`), sprite'y z map pikseli (`src/render/sprites.ts`, z nazwami klatek gotowymi pod atlas Aseprite: `ASEPRITE_ATLAS` w `src/config.ts`), efekty ZzFX, muzyka z własnego sekwencera chiptune, szum publiczności z filtrowanego szumu.
+Rozdzielczość zależy od okna: gra wybiera całkowitą liczbę pikseli urządzenia na piksel gry (k = min(szerokość/640, wysokość/360), w dół) i dopasowuje bufor do całego ekranu, minimum 640×360 (`viewFor` w `src/config.ts`). Dzięki temu skalowanie jest zawsze całkowite, także przy skalowaniu Windows 125/150%. Menu i ekrany wyników są układane w środkowym polu 640×360.
+
+Font to stała bitmapa 8×8 z Press Start 2P (`src/render/fontAtlas.ts`, generowana przez `node scripts/font-atlas.mjs`), więc tekst wygląda tak samo w każdej przeglądarce i systemie.
+
+Wszystko inne generowane w kodzie: paleta 32 kolorów (`src/render/palette.ts`), sprite'y z map pikseli (`src/render/sprites.ts`, z nazwami klatek gotowymi pod atlas Aseprite: `ASEPRITE_ATLAS` w `src/config.ts`), efekty ZzFX, muzyka z własnego sekwencera chiptune, szum publiczności z filtrowanego szumu (słyszalny tylko na hali).
 
 ## Prawa
 

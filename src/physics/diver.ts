@@ -53,6 +53,8 @@ export const SAVE_DEG = 4;
 export const FLAT_DEG = 40;
 export const LINE_GREEN_DEG = 5;
 export const ASSIST_SWITCH = 0.14;
+/** how far ←/→ move the arms in flight (rad): arms down spin faster, arms up slower */
+export const TRIM_ARMS = 1.6;
 const ASSIST_ARMS_LOW = 0.02;
 const ASSIST_ARMS_HIGH = Math.PI;
 const DEG = 180 / Math.PI;
@@ -209,6 +211,8 @@ export class DiverSim {
   frame: BodyFrame;
   /** how much the arm assist is steering right now (0..1) */
   assistArms = 0;
+  /** ←/→ arm trim right now: 1 faster, -1 slower, 0 none */
+  trim = 0;
   /** body angle samples (30 Hz) for synchronisation */
   trace: number[] = [];
 
@@ -550,7 +554,15 @@ export class DiverSim {
 
     let target = this.pose === 'open' ? this.entryPose : POSES[this.pose as PoseName];
     this.assistArms = 0;
-    if (this.setup.assist && this.pose === 'open' && this.flightProgress >= LINE_FROM && ttc > ASSIST_SWITCH) {
+    // ←/→ held: the arms trim the spin. The arrow in the screen direction of
+    // the rotation pulls them down (smaller I, faster), the other one raises
+    // them (bigger I, slower). Off once the rip window starts.
+    const dir = (input & IN.RIGHT ? 1 : 0) - (input & IN.LEFT ? 1 : 0);
+    this.trim = this.ripLocked ? 0 : dir * Math.sign(this.L || 1);
+    if (this.trim !== 0) {
+      const sh = this.trim > 0 ? Math.max(0, target.s - TRIM_ARMS) : Math.min(Math.PI, target.s + TRIM_ARMS);
+      target = { ...target, s: sh };
+    } else if (this.setup.assist && this.pose === 'open' && this.flightProgress >= LINE_FROM && ttc > ASSIST_SWITCH) {
       const [eEntry, eAlt] = this.assistRange();
       let u = 0;
       if (this.dive.headFirst && eEntry < 0 && eAlt > eEntry) u = -eEntry / (eAlt - eEntry);

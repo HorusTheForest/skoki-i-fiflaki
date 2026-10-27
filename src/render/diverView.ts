@@ -1,6 +1,7 @@
 // Draws a diver from its simulation state: one sprite per segment, rotated
-// inside the 320x180 buffer (low-resolution rotation gives the jagged 8-bit
-// edges), mirrored and squashed in width for twists.
+// inside the game buffer, mirrored and squashed in width for twists. Parts
+// are placed relative to one rounded anchor and rotations are snapped to 64
+// steps, so a moving diver keeps the same pixels instead of shimmering.
 
 import Phaser from 'phaser';
 import type { Joints } from '../physics/body';
@@ -38,6 +39,9 @@ export function lerpState(a: RenderState, b: RenderState, t: number): RenderStat
     j: { s: lj('s'), e: lj('e'), h: lj('h'), k: lj('k'), a: lj('a') },
   };
 }
+
+const STEP = (Math.PI * 2) / 64;
+const snap = (a: number) => Math.round(a / STEP) * STEP;
 
 const OUTLINE: [number, number][] = [
   [-1, 0],
@@ -122,14 +126,20 @@ export class DiverView {
     const pl = this.plane;
     const P = this.parts;
     let oi = 0;
+    // one rounded anchor (the hip) for the whole body: the offsets of the
+    // parts only change with the pose, not with the flight
+    const hip = segs.find((x) => x.name === 'torso')!;
+    const [hx, hy] = toScreen(pl, hip.px, hip.py);
+    const ax = Math.round(hx);
+    const ay = Math.round(hy);
     const place = (img: Phaser.GameObjects.Image, s: SegWorld, limb: boolean, order: number, backShift = 0) => {
       // far limbs sit a little behind the near ones, along the body's front axis
       const bx = backShift ? -Math.cos(s.dir) * backShift * sg : 0;
       const by = backShift ? Math.sin(s.dir) * backShift * sg : 0;
       const [px, py] = toScreen(pl, s.px + bx, s.py + by);
-      const x = Math.round(px);
-      const y = Math.round(py);
-      const rot = limb ? s.dir - Math.PI : s.dir;
+      const x = ax + Math.round(px - hx);
+      const y = ay + Math.round(py - hy);
+      const rot = snap(limb ? s.dir - Math.PI : s.dir);
       img.setPosition(x, y);
       img.setRotation(rot);
       img.setScale(squash * pl.s, pl.s);

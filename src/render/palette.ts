@@ -1,39 +1,39 @@
-// The one and only palette (32 colours, NES-like). Every colour in the game
-// comes from here: graphics, text, particles and palette swaps.
+// Base palette (32 named colours, soft 16-bit console tones). Shading,
+// gradients and highlights are derived from these with mix()/shade()/light().
 
 export const PALETTE = [
-  0x000000, // 0 black
-  0x1c1c3c, // 1 night navy
-  0x545474, // 2 slate
-  0x7c7c7c, // 3 grey
-  0xbcbcbc, // 4 light grey
-  0xfcfcfc, // 5 white
-  0x0000a8, // 6 deep blue
-  0x0058f8, // 7 blue
-  0x3cbcfc, // 8 sky blue
-  0xa4e4fc, // 9 pale blue
-  0x00406c, // 10 deep water
-  0x00788c, // 11 teal
-  0x00b8b8, // 12 cyan
-  0x7cf8e8, // 13 aqua foam
-  0x005800, // 14 dark green
-  0x00a800, // 15 green
-  0xb8f818, // 16 lime
-  0x881400, // 17 dark red
-  0xd82800, // 18 red
-  0xf87858, // 19 salmon
-  0xfca044, // 20 orange
-  0xf8b800, // 21 gold
-  0xf8d878, // 22 pale yellow
-  0x7c4c00, // 23 brown
-  0x3c2000, // 24 dark brown
-  0xfcd8a8, // 25 skin light
-  0xd89060, // 26 skin
-  0x9c5c30, // 27 skin dark
-  0x6844fc, // 28 violet
-  0xd800cc, // 29 magenta
-  0xf8a4c0, // 30 pink
-  0x2c2c2c, // 31 charcoal
+  0x0b0b14, // 0 black
+  0x1d2142, // 1 night navy
+  0x4a5378, // 2 slate
+  0x7d8599, // 3 grey
+  0xbfc5d3, // 4 light grey
+  0xf4f6ff, // 5 white
+  0x1f3a8a, // 6 deep blue
+  0x2f6fd8, // 7 blue
+  0x5fb2f0, // 8 sky blue
+  0xb8e2fa, // 9 pale blue
+  0x0d3d63, // 10 deep water
+  0x14788f, // 11 teal
+  0x2fb6c9, // 12 cyan
+  0x9af0ec, // 13 aqua foam
+  0x1e5a2c, // 14 dark green
+  0x3a9d3f, // 15 green
+  0xa8e04a, // 16 lime
+  0x7a1a1a, // 17 dark red
+  0xd0342c, // 18 red
+  0xf08a6c, // 19 salmon
+  0xf29b3a, // 20 orange
+  0xf6c443, // 21 gold
+  0xf7e3a1, // 22 pale yellow
+  0x7a4a24, // 23 brown
+  0x3e2414, // 24 dark brown
+  0xffd9b8, // 25 skin light
+  0xe0a477, // 26 skin
+  0xa86a45, // 27 skin dark
+  0x7a5cf0, // 28 violet
+  0xc4389e, // 29 magenta
+  0xf5a8c8, // 30 pink
+  0x2c2f3a, // 31 charcoal
 ] as const;
 
 export type ColorIndex = number;
@@ -83,6 +83,16 @@ export function col(i: ColorIndex): number {
 export function cssCol(i: ColorIndex): string {
   return `#${col(i).toString(16).padStart(6, '0')}`;
 }
+
+/** blend two RGB colours (0xRRGGBB), t = 0 gives a, 1 gives b */
+export function mix(a: number, b: number, t: number): number {
+  const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+/** darker / lighter version of a palette colour */
+export const shade = (i: ColorIndex, f = 0.3): number => mix(col(i), 0x0b0b14, f);
+export const light = (i: ColorIndex, f = 0.3): number => mix(col(i), 0xffffff, f);
+export const css = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
 
 export function rgb(i: ColorIndex): [number, number, number] {
   const c = col(i);

@@ -19,21 +19,23 @@ export class TvOverlay {
     this.g.fillStyle(col(C.black));
     for (let y = 0; y < HEIGHT; y += 3) this.g.fillRect(0, y, WIDTH, 1);
     // letterbox bars
-    this.g.fillRect(0, 0, WIDTH, 10);
-    this.g.fillRect(0, HEIGHT - 22, WIDTH, 22);
+    this.g.fillRect(0, 0, WIDTH, 20);
+    this.g.fillRect(0, HEIGHT - 40, WIDTH, 40);
     this.g.fillStyle(col(C.deepBlue));
-    this.g.fillRect(6, HEIGHT - 19, 180, 12);
+    this.g.fillRect(12, HEIGHT - 34, 260, 22);
+    this.g.fillStyle(col(C.blue));
+    this.g.fillRect(12, HEIGHT - 34, 260, 2);
     this.g.fillStyle(col(C.gold));
-    this.g.fillRect(6, HEIGHT - 19, 3, 12);
-    this.tag = txt(scene, 6, 1, '▶ POWTÓRKA', C.red).setDepth(301);
-    this.time = txt(scene, WIDTH - 6, HEIGHT - 9, '00:00:00', C.lightGrey, 'right').setDepth(301);
+    this.g.fillRect(12, HEIGHT - 34, 4, 22);
+    this.tag = txt(scene, 12, 6, '▶ POWTÓRKA', C.red).setDepth(301);
+    this.time = txt(scene, WIDTH - 12, HEIGHT - 26, '00:00:00', C.lightGrey, 'right').setDepth(301);
     this.objs.push(this.tag, this.time, this.g);
-    this.objs.push(txt(scene, 12, HEIGHT - 17, score !== undefined ? `NOTA ${score.toFixed(2)}` : 'SKOKI TV', C.white).setDepth(301));
+    this.objs.push(txt(scene, 24, HEIGHT - 27, score !== undefined ? `NOTA ${score.toFixed(2)}` : 'SKOKI TV', C.white).setDepth(301));
     if (SHOW_RINGS) {
-      ensureRingsTexture(scene, 'rings-tv', 3, C.white);
-      this.objs.push(scene.add.image(WIDTH - 22, 6, 'rings-tv').setScrollFactor(0).setDepth(301));
+      ensureRingsTexture(scene, 'rings-tv', 5, C.white);
+      this.objs.push(scene.add.image(WIDTH - 40, 10, 'rings-tv').setScrollFactor(0).setDepth(301));
     }
-    this.objs.push(txt(scene, WIDTH - 44, 1, 'TV', C.white, 'right').setDepth(301));
+    this.objs.push(txt(scene, WIDTH - 76, 6, 'TV', C.white, 'right').setDepth(301));
   }
 
   update(dt: number, simT: number): void {

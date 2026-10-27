@@ -2,19 +2,21 @@
 // what the campaign has unlocked. Previews both divers.
 
 import Phaser from 'phaser';
-import { HEIGHT } from '../config';
-import { C, col, OUTFITS } from '../render/palette';
+import { PPM, UI_H as HEIGHT, UI_W as WIDTH } from '../config';
+import { C, col, OUTFITS, shade } from '../render/palette';
 import { Menu, type MenuItem } from '../ui/menu';
-import { txt } from '../ui/text';
+import { panel, title, txt, uiFrame } from '../ui/text';
 import { getSave, save } from '../core/save';
 import { DiverView, type Plane } from '../render/diverView';
 import { POSES } from '../physics/body';
 import { PARTNERS, partnerById } from '../ai/partner';
 import { ARENAS } from '../render/arena';
+import { audio } from '../audio/engine';
 import type { RenderState } from '../physics/diver';
 
 const STAND: RenderState = { x: 0, y: 0, theta: 0, j: { ...POSES.stand }, psi: 0, facing: 1 };
 const plane = (x: number, y: number): Plane => ({ s: 2, ox: x, oy: y });
+const FLOOR_Y = 232;
 
 export class LockerScene extends Phaser.Scene {
   private menu!: Menu;
@@ -28,13 +30,17 @@ export class LockerScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(col(C.navy));
-    txt(this, 8, 6, 'SZATNIA', C.gold);
+    audio.arena(false);
+    uiFrame(this, C.navy);
+    title(this, WIDTH / 2, 10, 'SZATNIA', 16, col(C.paleYellow), col(C.orange));
+    panel(this, 370, 50, 240, 200, C.deepBlue, C.slate);
     const floor = this.add.graphics();
     floor.fillStyle(col(C.slate));
-    floor.fillRect(196, 112, 116, 3);
-    this.style = txt(this, 8, 124, '', C.sky).setDepth(2);
-    this.lockInfo = txt(this, 8, 152, '', C.grey).setDepth(2);
+    floor.fillRect(380, FLOOR_Y, 220, 4);
+    floor.fillStyle(shade(C.slate, 0.4));
+    floor.fillRect(380, FLOOR_Y + 4, 220, 2);
+    this.style = txt(this, 40, 266, '', C.sky).setDepth(2);
+    this.lockInfo = txt(this, 40, 304, '', C.lightGrey).setDepth(2);
     const s = getSave();
     const cycle = <T>(list: T[], cur: T, d: number) => list[(list.indexOf(cur) + d + list.length) % list.length]!;
     const items: MenuItem[] = [
@@ -58,7 +64,7 @@ export class LockerScene extends Phaser.Scene {
       },
       { label: 'POWRÓT', onSelect: () => this.scene.start('Menu') },
     ];
-    this.menu = new Menu(this, items, 8, 30, 190, 14, HEIGHT - 10);
+    this.menu = new Menu(this, items, 30, 70, 320, 22, HEIGHT - 16);
     this.menu.onBack = () => this.scene.start('Menu');
     this.refresh();
   }
@@ -85,8 +91,8 @@ export class LockerScene extends Phaser.Scene {
     this.mate?.destroy();
     const p = partnerById(s.partner);
     // centre of mass about 1 m above the feet, at scale 2
-    this.me = new DiverView(this, { outfit: s.outfit, hair: C.darkBrown, skin: 0 }, 10, plane(228, 112 - 1.0 * 32));
-    this.mate = new DiverView(this, p.look, 10, plane(282, 112 - 1.0 * 32));
+    this.me = new DiverView(this, { outfit: s.outfit, hair: C.darkBrown, skin: 0 }, 10, plane(450, FLOOR_Y - 2 * PPM));
+    this.mate = new DiverView(this, p.look, 10, plane(530, FLOOR_Y - 2 * PPM));
     // keep them dry: the preview has no pool
     this.me.waterY = this.mate.waterY = -100;
     this.me.update(STAND);

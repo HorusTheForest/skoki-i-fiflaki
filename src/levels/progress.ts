@@ -143,7 +143,7 @@ export function onLevelResult(r: DiveResult, total: number, scene: Phaser.Scene)
   else detail = v.stars < 3 ? `${v.stars + 1}★ od ${l.stars[v.stars - 1]!.toFixed(1)} pkt` : `Wynik ${soFar.toFixed(2)}`;
 
   const nextId = l.id + 1;
-  const out: LevelOutcome = { passed: v.passed, stars: v.stars, title: title.trim(), detail: detail.slice(0, 37) };
+  const out: LevelOutcome = { passed: v.passed, stars: v.stars, title: title.trim(), detail: detail.slice(0, 72) };
   if (v.passed && nextId <= LEVELS.length) {
     out.next = () => startLevel(scene, nextId);
     out.nextLabel = `POZIOM ${nextId}`;

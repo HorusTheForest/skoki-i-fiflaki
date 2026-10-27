@@ -28,7 +28,22 @@ test('boots into the menu without errors', async ({ page }) => {
   await activeScene(page, 'Menu');
   await expect(page.locator('canvas')).toHaveCount(1);
   const size = await page.locator('canvas').evaluate((c: HTMLCanvasElement) => [c.width, c.height]);
-  expect(size).toEqual([320, 180]);
+  // 960x540 at DPR 1: one device pixel per game pixel
+  expect(size).toEqual([960, 540]);
+  expect(errors).toEqual([]);
+});
+
+test('the buffer follows the window size in whole device pixels', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('./');
+  await activeScene(page, 'Menu');
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  // 3 device pixels per game pixel: 640x360
+  await page.waitForFunction(() => document.querySelector('canvas')?.width === 640, undefined, { timeout: 5_000 });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  // 2 per pixel: 683x384
+  await page.waitForFunction(() => document.querySelector('canvas')?.width === 683, undefined, { timeout: 5_000 });
+  await activeScene(page, 'Menu');
   expect(errors).toEqual([]);
 });
 

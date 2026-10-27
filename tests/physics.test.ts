@@ -50,6 +50,34 @@ describe('flight', () => {
     for (const p of prod) expect(p).toBeCloseTo(Ls[0]!, 9);
   });
 
+  it('←/→ in flight trim the spin with the arms', () => {
+    // 401A turns backwards (L < 0): ← speeds it up, → slows it down
+    const omegaAt = (input: number) => {
+      let w = 0;
+      fly(setup('401A'), (sim) => {
+        if (sim.phase === 'flight' && sim.flightProgress > 0.3 && w === 0) w = Math.abs(sim.omega);
+        return input;
+      });
+      return w;
+    };
+    const plain = omegaAt(0);
+    const sim = new DiverSim(setup('401A'));
+    expect(sim.dive.rot).toBe(-1);
+    // 401A opens with the arms overhead (largest I), so only speeding up is possible
+    expect(omegaAt(IN.LEFT)).toBeGreaterThan(plain * 1.1);
+    expect(omegaAt(IN.RIGHT)).toBeCloseTo(plain, 6);
+    // feet-first 102A (forward, L > 0) has the arms down: ← only slows it
+    const f = (input: number) => {
+      let w = 0;
+      fly(setup('102A'), (s) => {
+        if (s.phase === 'flight' && s.flightProgress > 0.3 && w === 0) w = Math.abs(s.omega);
+        return input;
+      });
+      return w;
+    };
+    expect(f(IN.LEFT)).toBeLessThan(f(0) * 0.9);
+  });
+
   it('rotates faster tucked than piked than open', () => {
     const omegaAt = (input: number) => {
       let w = 0;

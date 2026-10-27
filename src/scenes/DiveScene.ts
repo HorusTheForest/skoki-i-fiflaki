@@ -60,11 +60,16 @@ export interface DiveConfig {
   modifiers?: Modifier[];
 }
 
-const BACK: Plane = { s: 0.85, ox: (1 - 0.85) * (WIDTH / 2) + 10, oy: (1 - 0.85) * (HEIGHT / 2) - 22 };
+/** the partner's plane, further back; depends on the buffer size */
+let BACK: Plane = { s: 0.85, ox: 0, oy: 0 };
+const backPlane = (): Plane => ({ s: 0.85, ox: (1 - 0.85) * (WIDTH / 2) + 20, oy: (1 - 0.85) * (HEIGHT / 2) - 44 });
+/** camera zoom unit: bigger buffers zoom in by whole steps so the divers keep their size */
+const zoomUnit = (): number => Math.max(1, Math.round(HEIGHT / 360));
 const COUNT_T = [0, 0.6, 1.2];
 const HEP_T = 1.8;
-const RIBBON_SPEED = 90;
-const RIBBON_HIT_X = 56;
+const RIBBON_SPEED = 180;
+const RIBBON_HIT_X = 112;
+const RIBBON_H = 24;
 
 type Stage = 'intro' | 'live' | 'end';
 
@@ -114,6 +119,7 @@ export class DiveScene extends Phaser.Scene {
   private countIndex = 0;
   private flashTimer = 0;
   private camZoom = 2;
+
   private camX = 0;
   private camY = 0;
   private tv: TvOverlay | null = null;
@@ -169,18 +175,21 @@ export class DiveScene extends Phaser.Scene {
       this.chooseIdx = Math.max(0, i);
       this.chooseDir = this.dive.dir;
     }
+    BACK = backPlane();
+    document.body.style.background = '#000000';
+    this.cameras.main.setViewport(0, 0, WIDTH, HEIGHT);
     this.cameras.main.setBackgroundColor(col(C.black));
     this.cameras.main.setRoundPixels(true);
     this.arena = new Arena(this, cfg.arena, { backPlane: cfg.synchro ? BACK : undefined, activeHeight: cfg.height });
     this.world = this.add.graphics().setDepth(80);
     this.hud = this.add.graphics().setDepth(200).setScrollFactor(0);
-    this.label = shadowTxt(this, WIDTH / 2, 40, '', C.gold, 'center');
+    this.label = shadowTxt(this, WIDTH / 2, 70, '', C.gold, 'center');
     this.label.setDepth(210);
-    this.bigShadow = this.add.bitmapText(WIDTH / 2 + 1, 61, FONT, '', 16).setOrigin(0.5, 0).setScrollFactor(0).setDepth(210).setTint(col(C.black));
-    this.bigText = this.add.bitmapText(WIDTH / 2, 60, FONT, '', 16).setOrigin(0.5, 0).setScrollFactor(0).setDepth(211).setTint(col(C.gold));
-    this.syncLabel = shadowTxt(this, WIDTH - 4, HEIGHT - 26, '', C.gold, 'right');
+    this.bigShadow = this.add.bitmapText(WIDTH / 2 + 2, 102, FONT, '', 24).setOrigin(0.5, 0).setScrollFactor(0).setDepth(210).setTint(col(C.black));
+    this.bigText = this.add.bitmapText(WIDTH / 2, 100, FONT, '', 24).setOrigin(0.5, 0).setScrollFactor(0).setDepth(211).setTint(col(C.gold));
+    this.syncLabel = shadowTxt(this, WIDTH - 8, HEIGHT - RIBBON_H - 18, '', C.gold, 'right');
     this.syncLabel.setDepth(225);
-    this.info = shadowTxt(this, 4, HEIGHT - 12, '', C.white);
+    this.info = shadowTxt(this, 8, HEIGHT - RIBBON_H - 18, '', C.white);
     this.info.setDepth(210);
     this.autoBot = /[?&]autoplay\b/.test(location.search) && !cfg.replay ? new Bot(PERFECT_BOT) : null;
     this.buildDivers();
@@ -193,6 +202,7 @@ export class DiveScene extends Phaser.Scene {
     this.syncCameras();
     this.placeCamera(true);
     input().clearLatches();
+    audio.arena(true);
     audio.hush();
     music.play('arena');
     this.events.once('shutdown', () => this.tv?.destroy());
@@ -305,7 +315,7 @@ export class DiveScene extends Phaser.Scene {
       lines.unshift([`POZIOM ${l.id}: ${l.name.toUpperCase()}${n > 1 ? `  SERIA ${(this.cfg.round ?? 0) + 1}/${n}` : ''}`, C.lime]);
       let line = '';
       for (const w of l.tip.split(' ')) {
-        if ((line + ' ' + w).trim().length > 38) {
+        if ((line + ' ' + w).trim().length > Math.min(70, Math.floor((WIDTH - 24) / 8))) {
           lines.push([line, C.paleYellow]);
           line = w;
         } else line = (line + ' ' + w).trim();
@@ -313,17 +323,18 @@ export class DiveScene extends Phaser.Scene {
       if (line) lines.push([line, C.paleYellow]);
     } else if (this.cfg.choose && this.stage === 'intro') lines.push(['←→ grupa  ↑↓ skok  AKCJA start', C.lightGrey]);
     else if (this.cfg.mode !== 'replay' && this.stage === 'intro') lines.push([this.cfg.synchro ? 'Trzymaj AKCJĘ na 3-2-1, puść na HEP!' : 'Trzymaj AKCJĘ, puść w złotej strefie', C.lightGrey]);
+    if (this.cfg.mode !== 'replay' && this.stage === 'intro') lines.push(['W locie ←/→ zgodnie z obrotem: szybciej, przeciw: wolniej', C.lightGrey]);
     // on the platform the card sits low, on a dark band, clear of the divers
     const intro = this.stage === 'intro' && this.cfg.mode !== 'replay';
-    const y0 = intro ? HEIGHT - 20 - lines.length * 10 : 4;
+    const y0 = intro ? HEIGHT - RIBBON_H - 12 - lines.length * 12 : 8;
     if (intro) {
       const bg = this.add.graphics().setScrollFactor(0).setDepth(204);
       bg.fillStyle(col(C.black), 0.6);
-      bg.fillRect(0, y0 - 3, Math.max(...lines.map(([t]) => t.length)) * 8 + 8, lines.length * 10 + 4);
+      bg.fillRect(0, y0 - 6, Math.max(...lines.map(([t]) => t.length)) * 8 + 16, lines.length * 12 + 8);
       this.card.push(bg);
     }
     lines.forEach(([s, c], i) => {
-      const t = shadowTxt(this, 4, y0 + i * 10, s, c);
+      const t = shadowTxt(this, 8, y0 + i * 12, s, c);
       t.setDepth(205);
       this.card.push(t);
     });
@@ -340,7 +351,7 @@ export class DiveScene extends Phaser.Scene {
     };
     for (const cue of cues) {
       const [ch, c] = icon[cue.kind];
-      const box = txt(this, -20, HEIGHT - 13, ch, c, 'center').setDepth(222);
+      const box = txt(this, -20, HEIGHT - RIBBON_H + 8, ch, c, 'center').setDepth(222);
       this.ribbonIcons.push({ cue, box });
     }
   }
@@ -697,7 +708,7 @@ export class DiveScene extends Phaser.Scene {
     if (showAids && (s.phase === 'charge' || (this.cfg.synchro && s.phase === 'ready' && this.stage === 'live'))) {
       const [cx, cy] = toScreen(FRONT, st.x, st.y);
       const [lo, hi] = s.zone;
-      const r = (p: number) => 4 + p * 18;
+      const r = (p: number) => 8 + p * 36;
       g.lineStyle(1, col(C.gold));
       for (let rr = Math.round(r(lo)); rr <= Math.round(r(hi)); rr++) g.strokeCircle(Math.round(cx), Math.round(cy), rr);
       const p = s.power;
@@ -751,17 +762,17 @@ export class DiveScene extends Phaser.Scene {
     // rhythm ribbon
     if (this.ribbonIcons.length) {
       g.fillStyle(col(C.black));
-      g.fillRect(0, HEIGHT - 16, WIDTH, 16);
+      g.fillRect(0, HEIGHT - RIBBON_H, WIDTH, RIBBON_H);
       g.fillStyle(col(C.slate));
-      g.fillRect(0, HEIGHT - 16, WIDTH, 1);
+      g.fillRect(0, HEIGHT - RIBBON_H, WIDTH, 1);
       g.fillStyle(col(C.gold));
-      g.fillRect(RIBBON_HIT_X - 6, HEIGHT - 15, 1, 15);
-      g.fillRect(RIBBON_HIT_X + 5, HEIGHT - 15, 1, 15);
+      g.fillRect(RIBBON_HIT_X - 9, HEIGHT - RIBBON_H + 2, 2, RIBBON_H - 4);
+      g.fillRect(RIBBON_HIT_X + 8, HEIGHT - RIBBON_H + 2, 2, RIBBON_H - 4);
       const now = this.stage === 'intro' ? 0 : this.player.sim.t + this.acc;
       for (const ic of this.ribbonIcons) {
         const x = RIBBON_HIT_X + (ic.cue.t - now) * RIBBON_SPEED;
         const far = this.has('shortRibbon') ? RIBBON_HIT_X + 0.5 * RIBBON_SPEED : WIDTH + 8;
-        ic.box.setVisible(x > RIBBON_HIT_X - 24 && x < far);
+        ic.box.setVisible(x > RIBBON_HIT_X - 40 && x < far);
         ic.box.setX(Math.round(x));
       }
     }
@@ -788,7 +799,8 @@ export class DiveScene extends Phaser.Scene {
     const st = this.player.curr;
     let tx: number;
     let ty: number;
-    let zoom = 2;
+    const zu = zoomUnit();
+    let zoom = 2 * zu;
     const tvShot = this.cfg.tv;
     if (s.phase === 'ready' || s.phase === 'charge' || s.phase === 'push') {
       tx = 1.2;
@@ -798,9 +810,9 @@ export class DiveScene extends Phaser.Scene {
       if (ttc < 0.35 || st.y < 2.2) {
         tx = s.x;
         ty = Math.max(0.6, st.y - 0.6);
-        zoom = 2;
+        zoom = 2 * zu;
       } else {
-        zoom = 1;
+        zoom = zu;
         tx = st.x + 2.5;
         ty = st.y - (st.y > this.cfg.height ? 0.5 : 2.2);
       }
@@ -808,7 +820,7 @@ export class DiveScene extends Phaser.Scene {
       const [rx, ry] = this.player.ragdoll ? this.player.ragdoll.centre() : [st.x, st.y];
       tx = rx;
       ty = tvShot ? Math.min(-0.8, ry + 0.3) : Math.max(ry, -2.2) + 0.3;
-      zoom = 2;
+      zoom = 2 * zu;
     }
     if (snap) {
       this.camX = tx;
@@ -863,6 +875,16 @@ export class DiveScene extends Phaser.Scene {
       result = { cfg: this.cfg, solo: j, dd, replay, player: record(this.player.sim) };
     }
     this.scene.start('Results', result);
+  }
+
+  /** the window changed size: restart on the platform, otherwise just grow the cameras */
+  relayout(): void {
+    if (this.stage === 'intro') {
+      this.scene.restart(this.cfg);
+      return;
+    }
+    this.cameras.main.setSize(WIDTH, HEIGHT);
+    this.uiCam.setSize(WIDTH, HEIGHT);
   }
 
   private leave(): void {

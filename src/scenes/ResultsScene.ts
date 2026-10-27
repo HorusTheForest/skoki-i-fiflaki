@@ -2,14 +2,15 @@
 // total, what went wrong, and next steps (retry, TV replay, share, menu).
 
 import Phaser from 'phaser';
-import { HEIGHT, WIDTH } from '../config';
+import { UI_H as HEIGHT, UI_W as WIDTH } from '../config';
 import type { DiveConfig } from './DiveScene';
 import type { Award, DiveRecord, Execution, IndividualScore, SyncResult, SynchroScore } from '../scoring/judges';
 import { DD_IS_APPROXIMATE } from '../scoring/dd';
 import { encodeReplay, replayUrl, type ReplayData } from '../core/replay';
 import { getSave, save } from '../core/save';
 import { C, col } from '../render/palette';
-import { panel, txt } from '../ui/text';
+import { panel, title, txt, uiFrame } from '../ui/text';
+import { diveName, parseDiveCode } from '../levels/diveCode';
 import { Menu, type MenuItem } from '../ui/menu';
 import { audio } from '../audio/engine';
 import { onLevelResult, startLevel, type LevelOutcome } from '../levels/progress';
@@ -40,61 +41,64 @@ export class ResultsScene extends Phaser.Scene {
 
   create(): void {
     const r = this.res;
-    this.cameras.main.setBackgroundColor(col(C.navy));
+    uiFrame(this, C.navy);
     const total = r.synchro ? r.synchro.score.total : r.solo!.score.total;
     if (r.outcome === undefined) {
       r.outcome = onLevelResult(r, total, this);
       this.saveRecords(total);
     }
 
-    panel(this, 4, 4, WIDTH - 8, 92, C.black, C.slate);
-    txt(this, 10, 9, `${r.replay.code}  WT ${DD_IS_APPROXIMATE ? '≈' : ''}${r.dd.toFixed(1)}`, C.gold);
-    txt(this, WIDTH - 10, 9, total.toFixed(2), C.white, 'right');
+    const L = 26;
+    panel(this, 12, 10, WIDTH - 24, 196, C.charcoal, C.slate);
+    txt(this, L, 22, `${r.replay.code}  ${diveName(parseDiveCode(r.replay.code))}`, C.gold);
+    txt(this, L, 34, `Współczynnik trudności ${DD_IS_APPROXIMATE ? '≈' : ''}${r.dd.toFixed(1)}`, C.lightGrey);
+    title(this, WIDTH - 90, 20, total.toFixed(2), 16, col(C.white), col(C.paleBlue));
 
     const row = (y: number, label: string, awards: Award[], color: number) => {
-      txt(this, 10, y, label, color);
+      txt(this, L, y, label, color);
       awards.forEach((a, i) => {
         const v = a.value % 1 === 0 ? a.value.toFixed(0) : a.value.toFixed(1);
-        const x = 74 + i * 30;
-        txt(this, x + 24, y, v, a.cancelled ? C.grey : C.white, 'right');
+        const x = 140 + i * 50;
+        txt(this, x + 32, y, v, a.cancelled ? C.grey : C.white, 'right');
         if (a.cancelled) {
           const g = this.add.graphics().setScrollFactor(0);
           g.fillStyle(col(C.grey));
-          g.fillRect(x + 24 - v.length * 8, y + 3, v.length * 8, 1);
+          g.fillRect(x + 32 - v.length * 8 - 1, y + 3, v.length * 8 + 2, 1);
         }
       });
     };
-    let y = 24;
+    let y = 56;
     if (r.synchro) {
       const s = r.synchro.score;
       row(y, 'TY', s.execA, C.sky);
-      row(y + 11, 'PARTNER', s.execB, C.sky);
-      row(y + 22, 'SYNCHRO', s.sync, C.lime);
-      txt(this, 10, y + 36, `${s.sum.toFixed(1)} × ${s.dd.toFixed(1)} × 0,6 = ${s.total.toFixed(2)}`, C.lightGrey);
-      y += 48;
+      row(y + 16, 'PARTNER', s.execB, C.sky);
+      row(y + 32, 'SYNCHRO', s.sync, C.lime);
+      txt(this, L, y + 52, `Suma ${s.sum.toFixed(1)} × WT ${s.dd.toFixed(1)} × 0,6 = ${s.total.toFixed(2)}`, C.lightGrey);
+      y += 72;
     } else {
       const s = r.solo!.score;
-      row(y, 'SĘDZIO.', s.awards.slice(0, 7), C.sky);
-      txt(this, 10, y + 14, `${s.sum.toFixed(1)} × ${s.dd.toFixed(1)} = ${s.total.toFixed(2)}`, C.lightGrey);
-      y += 26;
+      row(y, 'SĘDZIOWIE', s.awards.slice(0, 7), C.sky);
+      txt(this, L, y + 20, `Suma ${s.sum.toFixed(1)} × WT ${s.dd.toFixed(1)} = ${s.total.toFixed(2)}`, C.lightGrey);
+      y += 40;
     }
-    // biggest deductions
+    // what happened and the biggest deductions
     const exec = r.synchro ? r.synchro.execA : r.solo!.exec;
     const ded = [...exec.deductions];
-    if (r.synchro) ded.push(...r.synchro.sync.deductions.map((d) => ({ ...d, reason: `Sync: ${d.reason}` })));
+    if (r.synchro) ded.push(...r.synchro.sync.deductions.map((d) => ({ ...d, reason: `Synchro: ${d.reason}` })));
     ded.sort((a, b) => b.points - a.points);
     const e = r.player.entry;
-    const facts = e ? `Kąt ${e.angleErr >= 0 ? '+' : ''}${e.angleErr.toFixed(0)}°  Rip ${e.rip}  Wybicie ${r.player.takeoff?.label ?? '-'}` : '';
-    txt(this, 10, y, facts, C.white);
-    ded.slice(0, 2).forEach((d, i) => txt(this, 10, y + 10 + i * 9, `-${d.points.toFixed(1)} ${d.reason}`.slice(0, 37), C.salmon));
+    const facts = e ? `Kąt wejścia ${e.angleErr >= 0 ? '+' : ''}${e.angleErr.toFixed(0)}°   Rip ${e.rip}   Wybicie ${r.player.takeoff?.label ?? '-'}` : 'Skok przerwany';
+    txt(this, L, y, facts, C.white);
+    const room = Math.max(1, Math.floor((196 - (y + 14 - 10)) / 12));
+    ded.slice(0, Math.min(4, room)).forEach((d, i) => txt(this, L, y + 14 + i * 12, `-${d.points.toFixed(1)}  ${d.reason}`.slice(0, 72), C.salmon));
 
     // level outcome
     const o = r.outcome;
     if (o) {
-      panel(this, 4, 100, WIDTH - 8, 24, o.passed ? C.darkGreen : C.darkRed, o.passed ? C.lime : C.red);
-      txt(this, 10, 104, o.title, C.white);
-      txt(this, 10, 114, o.detail, C.lightGrey);
-      txt(this, WIDTH - 10, 104, '★'.repeat(o.stars) + '·'.repeat(3 - o.stars), C.gold, 'right');
+      panel(this, 12, 212, WIDTH - 24, 40, o.passed ? C.darkGreen : C.darkRed, o.passed ? C.lime : C.red);
+      txt(this, L, 221, o.title, C.white);
+      txt(this, L, 235, o.detail, C.lightGrey);
+      title(this, WIDTH - 70, 222, '★'.repeat(o.stars) + '·'.repeat(3 - o.stars), 16, col(C.paleYellow), col(C.orange));
       if (o.stars > 0) audio.play('star');
     }
 
@@ -118,8 +122,8 @@ export class ResultsScene extends Phaser.Scene {
     });
     items.push({ label: 'KOPIUJ LINK', onSelect: () => this.share() });
     items.push({ label: 'MENU', onSelect: () => this.scene.start(r.cfg.mode === 'level' ? 'Levels' : 'Menu') });
-    const top = o ? 130 : 108;
-    this.menu = new Menu(this, items, 8, top, 150, 10, HEIGHT - 9);
+    const top = o ? 262 : 216;
+    this.menu = new Menu(this, items, 12, top, 220, 17);
     this.menu.onBack = () => this.scene.start(r.cfg.mode === 'level' ? 'Levels' : 'Menu');
     audio.relax();
   }
@@ -144,7 +148,7 @@ export class ResultsScene extends Phaser.Scene {
       // clipboard blocked
     }
     history.replaceState(null, '', url);
-    txt(this, WIDTH - 8, HEIGHT - 20, 'Link w schowku i pasku adresu', C.lime, 'right');
+    txt(this, WIDTH - 16, HEIGHT - 18, 'Link w schowku i w pasku adresu', C.lime, 'right');
   }
 
   override update(): void {

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HEIGHT, WIDTH } from './config';
+import { HEIGHT, WIDTH, setViewSize, viewFor } from './config';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { DiveScene } from './scenes/DiveScene';
@@ -13,6 +13,9 @@ import { audio } from './audio/engine';
 
 load();
 
+const first = viewFor(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1);
+setViewSize(first.w, first.h);
+
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -21,10 +24,13 @@ const game = new Phaser.Game({
   pixelArt: true,
   roundPixels: true,
   antialias: false,
-  backgroundColor: '#000000',
+  // lets screen capture tools read the canvas
+  preserveDrawingBuffer: true,
+  // menus colour the page behind their centred panel
+  transparent: true,
   scale: {
     mode: Phaser.Scale.NONE,
-    zoom: Phaser.Scale.MAX_ZOOM,
+    zoom: first.k / (window.devicePixelRatio || 1),
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   input: { keyboard: false, mouse: true, touch: true, gamepad: false },
@@ -33,12 +39,32 @@ const game = new Phaser.Game({
   scene: [BootScene, MenuScene, DiveScene, ResultsScene, LevelsScene, SettingsScene, LockerScene],
 });
 
-// integer scaling only: recompute the largest whole zoom on resize
+// The buffer follows the window (see viewFor): a whole number of *device*
+// pixels per game pixel, so pixels stay square and sharp also with Windows
+// display scaling (125%, 150%...), where a whole CSS zoom would not be.
+let resizeTimer = 0;
 const fit = () => {
-  const z = Math.max(1, Math.floor(Math.min(window.innerWidth / WIDTH, window.innerHeight / HEIGHT)));
-  if (game.scale.zoom !== z) game.scale.setZoom(z);
+  const dpr = window.devicePixelRatio || 1;
+  const v = viewFor(window.innerWidth, window.innerHeight, dpr);
+  const sizeChanged = v.w !== WIDTH || v.h !== HEIGHT;
+  if (sizeChanged) {
+    setViewSize(v.w, v.h);
+    game.scale.resize(v.w, v.h);
+  }
+  if (game.scale.zoom !== v.k / dpr) game.scale.setZoom(v.k / dpr);
+  if (!sizeChanged) return;
+  // lay the screens out again for the new size
+  for (const sc of game.scene.getScenes(true)) {
+    const re = (sc as Phaser.Scene & { relayout?: () => void }).relayout;
+    if (re) re.call(sc);
+    else if (sc.scene.key !== 'Boot') sc.scene.restart(sc.sys.settings.data);
+  }
 };
-window.addEventListener('resize', fit);
+const onResize = () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(fit, 150);
+};
+window.addEventListener('resize', onResize);
 game.events.once(Phaser.Core.Events.READY, () => {
   fit();
   const inp = initInput(game.canvas);
