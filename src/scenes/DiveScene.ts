@@ -24,6 +24,7 @@ import { FONT } from '../render/font';
 import { input } from '../core/input';
 import { getSave, settings } from '../core/save';
 import { audio, type Sfx } from '../audio/engine';
+import { music } from '../audio/music';
 import { partnerById, planPartnerDive, type Cue, type PartnerDive } from '../ai/partner';
 import { hashSeed } from '../core/rng';
 import { Bot, PERFECT_BOT } from '../ai/bot';
@@ -193,6 +194,7 @@ export class DiveScene extends Phaser.Scene {
     this.placeCamera(true);
     input().clearLatches();
     audio.hush();
+    music.play('arena');
     this.events.once('shutdown', () => this.tv?.destroy());
   }
 
@@ -254,7 +256,7 @@ export class DiveScene extends Phaser.Scene {
       const view = new DiverView(this, p.look, 40, BACK, { underDepth: 47 });
       view.waterY = 0;
       this.partner = this.newDiver(this.setup, view, BACK, 'back', this.partnerPlan.inputs);
-      if (cfg.ribbon && !cfg.tv) this.buildRibbon(this.partnerPlan.cues);
+      if (cfg.ribbon && settings().rhythmRibbon && !cfg.tv) this.buildRibbon(this.partnerPlan.cues);
     }
     // ghost of the best dive (solo freestyle)
     if (cfg.mode === 'freestyle' && !cfg.synchro) this.buildGhost();

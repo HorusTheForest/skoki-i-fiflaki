@@ -29,6 +29,9 @@ export class Input {
   private touchStart = new Map<number, { x: number; y: number; t: number }>();
   /** called with the KeyboardEvent.code of the next key (for remapping) */
   captureKey: ((code: string) => void) | null = null;
+  /** settings: the next gamepad button pressed goes here instead of the game */
+  capturePad: ((index: number) => void) | null = null;
+  private padButtonsPrev: boolean[] = [];
   lastDevice: 'keyboard' | 'touch' | 'mouse' | 'pad' = 'keyboard';
   private readonly el: HTMLElement;
 
@@ -144,6 +147,17 @@ export class Input {
     const pads = typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : [];
     let m = 0;
     const map = settings().pad;
+    const now: boolean[] = [];
+    for (const p of pads) if (p) p.buttons.forEach((b, i) => (now[i] = now[i] || b.pressed));
+    const fresh = now.findIndex((v, i) => v && !this.padButtonsPrev[i]);
+    this.padButtonsPrev = now;
+    if (this.capturePad && fresh >= 0) {
+      const cb = this.capturePad;
+      this.capturePad = null;
+      this.padHeld = BIT.action | BIT.back | IN.UP | IN.DOWN | IN.LEFT | IN.RIGHT;
+      cb(fresh);
+      return;
+    }
     for (const p of pads) {
       if (!p) continue;
       for (const b of BINDABLES) {

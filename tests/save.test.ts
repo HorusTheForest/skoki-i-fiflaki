@@ -32,6 +32,15 @@ describe('save schema', () => {
     expect(s.records['103C@10']).toBe(60);
   });
 
+  it('migrates v3 and adds the synchro partner', () => {
+    const v3 = { ...defaultSave(), version: 3, partner: undefined, outfit: 2, unlocks: { partners: ['ola', 'kuba'], outfits: [0, 2], arenas: ['day'] } };
+    const s = migrate(v3);
+    expect(s.version).toBe(4);
+    expect(s.partner).toBe('ola');
+    expect(s.outfit).toBe(2);
+    expect(s.unlocks.partners).toEqual(['ola', 'kuba']);
+  });
+
   it('falls back to defaults for unknown or broken data', () => {
     expect(migrate(null)).toEqual(defaultSave());
     expect(migrate({ version: 99 })).toEqual(defaultSave());

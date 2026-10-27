@@ -6,6 +6,7 @@ import { DiveScene } from './scenes/DiveScene';
 import { ResultsScene } from './scenes/ResultsScene';
 import { LevelsScene } from './scenes/LevelsScene';
 import { SettingsScene } from './scenes/SettingsScene';
+import { LockerScene } from './scenes/LockerScene';
 import { initInput } from './core/input';
 import { load } from './core/save';
 import { audio } from './audio/engine';
@@ -29,7 +30,7 @@ const game = new Phaser.Game({
   input: { keyboard: false, mouse: true, touch: true, gamepad: false },
   audio: { noAudio: true },
   fps: { target: 60 },
-  scene: [BootScene, MenuScene, DiveScene, ResultsScene, LevelsScene, SettingsScene],
+  scene: [BootScene, MenuScene, DiveScene, ResultsScene, LevelsScene, SettingsScene, LockerScene],
 });
 
 // integer scaling only: recompute the largest whole zoom on resize

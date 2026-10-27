@@ -27,7 +27,7 @@ export interface LevelProgress {
 }
 
 export interface SaveData {
-  version: 3;
+  version: 4;
   settings: Settings;
   levels: Record<string, LevelProgress>;
   /** freestyle records per "code@height" */
@@ -37,6 +37,8 @@ export interface SaveData {
   unlocks: { partners: string[]; outfits: number[]; arenas: string[] };
   outfit: number;
   arena: string;
+  /** partner for synchro training */
+  partner: string;
 }
 
 export const DEFAULT_KEYS: Record<Bindable, string[]> = {
@@ -76,7 +78,7 @@ export function defaultSettings(): Settings {
 
 export function defaultSave(): SaveData {
   return {
-    version: 3,
+    version: 4,
     settings: defaultSettings(),
     levels: {},
     records: {},
@@ -84,6 +86,7 @@ export function defaultSave(): SaveData {
     unlocks: { partners: ['ola'], outfits: [0], arenas: ['day'] },
     outfit: 0,
     arena: 'day',
+    partner: 'ola',
   };
 }
 
@@ -94,6 +97,7 @@ type AnySave = { version?: number } & Record<string, unknown>;
  * v1 (first public build): { version: 1, volume, stars: {levelId: n}, pro }
  * v2: settings object, levels with best scores, no ghosts/unlocks
  * v3: ghosts, unlocks, outfit, arena, rhythmRibbon setting
+ * v4: chosen synchro partner
  */
 const MIGRATIONS: ((s: AnySave) => AnySave)[] = [
   (v1) => {
@@ -116,9 +120,13 @@ const MIGRATIONS: ((s: AnySave) => AnySave)[] = [
       version: 3,
     };
   },
+  (v3) => {
+    const unlocked = ((v3['unlocks'] as { partners?: string[] } | undefined)?.partners ?? ['ola'])[0] ?? 'ola';
+    return { ...v3, partner: unlocked, version: 4 };
+  },
 ];
 
-export const CURRENT_VERSION = 3;
+export const CURRENT_VERSION = 4;
 
 export function migrate(raw: unknown): SaveData {
   if (!raw || typeof raw !== 'object') return defaultSave();

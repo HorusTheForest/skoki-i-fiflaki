@@ -37,7 +37,7 @@ export class MenuScene extends Phaser.Scene {
       code: synchro ? '105C' : '103C',
       height: synchro ? 10 : this.height,
       synchro,
-      partner: 'ola',
+      partner: save.partner,
       zoneWidth: 0.14,
       ribbon: true,
       seed: Math.floor(Math.random() * 1e9),
@@ -55,6 +55,7 @@ export class MenuScene extends Phaser.Scene {
       },
       { label: 'SYNCHRO TRENING', onSelect: () => this.scene.start('Dive', free('freestyle', true)), hint: 'Dowolny skok z partnerem' },
       { label: 'TRENING', onSelect: () => this.scene.start('Dive', free('training', false)), hint: 'Slow-mo i dane: ω, I, kąt wejścia' },
+      { label: 'SZATNIA', onSelect: () => this.scene.start('Locker'), hint: 'Strój, partner i arena' },
       { label: 'USTAWIENIA', onSelect: () => this.scene.start('Settings'), hint: 'Głośność, klawisze, asysty, tryb Pro' },
     ];
     this.menu = new Menu(this, items, 92, 84, 150, 12, HEIGHT - 10);
