@@ -52,6 +52,7 @@ test('a freestyle dive played by the bot reaches the results', async ({ page }) 
   await page.goto('./?autoplay');
   await activeScene(page, 'Menu');
   await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Space');
   await activeScene(page, 'Dive');
   await activeScene(page, 'Results', 30_000);
@@ -67,6 +68,7 @@ test('synchro dive with the AI partner reaches the 11-judge results', async ({ p
   const errors = collectErrors(page);
   await page.goto('./?autoplay');
   await activeScene(page, 'Menu');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Space');
@@ -88,6 +90,7 @@ test('campaign level 1 is passed, saved and unlocks level 2', async ({ page }) =
   await page.goto('./?autoplay');
   await page.evaluate(() => localStorage.clear());
   await activeScene(page, 'Menu');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Space');
   await activeScene(page, 'Levels');
   await page.keyboard.press('Space');
@@ -106,5 +109,21 @@ test('campaign level 1 is passed, saved and unlocks level 2', async ({ page }) =
   await activeScene(page, 'Dive');
   const id = await page.evaluate(() => ((window as GameWindow).__game!.scene.getScene('Dive') as unknown as { cfg: { levelId: number } }).cfg.levelId);
   expect(id).toBe(2);
+  expect(errors).toEqual([]);
+});
+
+test('the Odbicie prototype starts and bounces', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('./');
+  await activeScene(page, 'Menu');
+  await page.keyboard.press('Space');
+  await activeScene(page, 'Bounce');
+  await page.keyboard.press('Space');
+  type Sim = { sim: { events: { type: string }[] } };
+  await page.waitForFunction(
+    () => ((window as GameWindow).__game!.scene.getScene('Bounce') as unknown as Sim).sim.events.some((e) => e.type === 'launch'),
+    undefined,
+    { timeout: 10_000 },
+  );
   expect(errors).toEqual([]);
 });
