@@ -212,6 +212,7 @@ export class DiveScene extends Phaser.Scene {
     audio.arena(true);
     audio.hush();
     music.play('arena');
+    music.duck(1, 0.1);
     this.events.once('shutdown', () => this.tv?.destroy());
   }
 
@@ -468,6 +469,8 @@ export class DiveScene extends Phaser.Scene {
     // in solo the ACTION that started the dive also starts the charge
     if (!this.cfg.synchro) input().clearLatches();
     if (this.cfg.mode === 'training') this.timeScale = 0.5;
+    // the dive itself is quieter: crowd and splash take over
+    music.duck(0.35, 0.6);
   }
 
   private tick(): void {
@@ -552,12 +555,16 @@ export class DiveScene extends Phaser.Scene {
       }
       d.belowPrev[i] = below;
     });
-    if (sim.phase === 'water' && !d.ragdoll && sim.y < 0) {
+    const [cx, cy] = d.ragdoll ? d.ragdoll.centre() : [sim.x, sim.y];
+    if (sim.phase === 'water' && cy < 0) {
       d.bubbleTimer -= DT;
       if (d.bubbleTimer <= 0) {
         d.bubbleTimer = 0.05;
+        // a trail of bubbles behind the plunge, thicker while it is fast
         const perfect = e?.rip === 'PERFECT';
-        w.bubble(sim.x, sim.y, perfect ? 3 : 1);
+        const [vx2, vy2] = d.ragdoll ? d.ragdoll.velocity() : [sim.vx, sim.vy];
+        const speed = Math.hypot(vx2, vy2);
+        w.bubble(cx, cy, (perfect ? 2 : 1) + Math.floor(speed / 2.5));
       }
     }
   }
@@ -653,6 +660,7 @@ export class DiveScene extends Phaser.Scene {
             this.hitstop = 0.08;
             this.flash();
             this.flashLabel('RIP ENTRY!', C.cyan, true);
+            music.fanfare();
             audio.roar(Math.abs(en.angleErr) < 6 ? 1 : 0.6);
             inp.vibrate(80, 0.8);
             this.arena.cheer(1);
@@ -875,7 +883,7 @@ export class DiveScene extends Phaser.Scene {
     } else {
       const [rx, ry] = this.player.ragdoll ? this.player.ragdoll.centre() : [st.x, st.y];
       tx = rx;
-      ty = tvShot ? Math.min(-0.8, ry + 0.3) : Math.max(ry, -2.2) + 0.3;
+      ty = tvShot ? Math.min(-0.8, ry + 0.3) : Math.max(ry, -3.6) + 0.3;
       zoom = 2 * zu;
     }
     if (snap) {

@@ -13,6 +13,7 @@ import { panel, title, txt, uiFrame } from '../ui/text';
 import { diveName, parseDiveCode } from '../levels/diveCode';
 import { Menu, type MenuItem } from '../ui/menu';
 import { audio } from '../audio/engine';
+import { music } from '../audio/music';
 import { onLevelResult, startLevel, type LevelOutcome } from '../levels/progress';
 import { isFinal, level } from '../levels/levels';
 
@@ -126,6 +127,7 @@ export class ResultsScene extends Phaser.Scene {
     this.menu = new Menu(this, items, 12, top, 220, 17);
     this.menu.onBack = () => this.scene.start(r.cfg.mode === 'level' ? 'Levels' : 'Menu');
     audio.relax();
+    music.duck(1, 1);
   }
 
   private saveRecords(total: number): void {

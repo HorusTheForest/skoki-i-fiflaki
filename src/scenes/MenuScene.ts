@@ -69,6 +69,7 @@ export class MenuScene extends Phaser.Scene {
     txt(this, WIDTH - 4, HEIGHT - 26, 'v0.2', C.lightGrey, 'right');
     this.input.once('pointerdown', () => audio.unlock());
     music.play('menu');
+    music.duck(1, 0.3);
   }
 
   private cycleHeight(d: number): void {

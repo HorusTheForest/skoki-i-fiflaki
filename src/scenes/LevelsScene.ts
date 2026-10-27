@@ -61,6 +61,7 @@ export class LevelsScene extends Phaser.Scene {
     this.info = [0, 1, 2, 3, 4].map((i) => txt(this, GX + 12, py + 12 + i * 14, '', C.white).setDepth(2));
     this.refresh();
     music.play('menu');
+    music.duck(1, 0.3);
   }
 
   private cellPos(id: number): [number, number] {

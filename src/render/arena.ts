@@ -437,7 +437,8 @@ export class Arena {
     // moving surface layer down to the static gradient below it
     for (let i = 0; i < w.cols; i++) {
       const x = Math.round((w.x0 + i * w.dx) * m);
-      const top = Math.round(-w.h[i]! * m);
+      // a deep crater would reach under the static water below: clamp it
+      const top = Math.min(WATER_BAND - 3, Math.round(-w.h[i]! * m));
       g.fillStyle(col(t.water));
       g.fillRect(x, top, 1, WATER_BAND + (i % 2) - top);
       const slope = (w.h[Math.min(w.cols - 1, i + 1)]! - w.h[Math.max(0, i - 1)]!) * m;

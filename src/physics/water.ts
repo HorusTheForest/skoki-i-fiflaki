@@ -15,6 +15,8 @@ export interface Particle {
   tone: number;
 }
 
+const WATER_DT = 1 / 120;
+
 export class WaterSurface {
   readonly x0: number;
   readonly cols: number;
@@ -94,7 +96,14 @@ export class WaterSurface {
     }
   }
 
+  /** advance by dt in fixed sub-steps: the explicit spring mesh is only
+   * stable for steps under 1/sqrt(coupling) (about 22 ms) */
   step(dt: number): void {
+    const n = Math.max(1, Math.ceil(dt / WATER_DT));
+    for (let k = 0; k < n; k++) this.substep(dt / n);
+  }
+
+  private substep(dt: number): void {
     this.time += dt;
     const { h, v, tmp, cols } = this;
     for (let i = 0; i < cols; i++) {

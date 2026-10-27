@@ -58,6 +58,7 @@ Dotyk: lewa/prawa krawędź ekranu to ←/→, dół to AKCJA + ↓, szybkie prz
 
 - Fizyka (`src/physics/diver.ts`): stały krok 120 Hz z akumulatorem, renderowanie z interpolacją, pełny determinizm. Środek masy leci balistycznie, moment pędu L jest ustalany przy wybiciu, a ω = L / I(pozy). Stawy prowadzą regulatory PD (ok. 160 ms). Grawitacja jest celowo niższa od ziemskiej (6,5 m/s²), żeby skok był czytelny. ←/→ w locie przesuwają cel barku, więc zmieniają moment bezwładności, a z nim prędkość obrotu; L dalej jest stałe.
 - Ragdoll (`src/physics/ragdoll.ts`, Planck.js): uderzenie w platformę, płaskie wejście, wejście w kuczce. Każdy segment dostaje prędkość v + ω×r.
+- Woda: opór kwadratowy względem kierunku ruchu. Ciało ustawione wzdłuż toru (czyste wejście) wbija się na 2–3 m, ciało poprzeczne (płaskacz, kuczka) staje po ok. pół metra; wypór tylko trochę większy od grawitacji, więc wypływanie jest powolne. W ragdollu ten sam opór liczony osobno wzdłuż i w poprzek każdego segmentu.
 - Woda (`src/physics/water.ts`): siatka sprężyn 1D, kolumna na piksel.
 - Punktacja (`src/scoring`): synchro 11 sędziów (3 + 3 + 5), skreślanie skrajnych, suma × WT × 0,6; indywidualnie 7 sędziów, suma 3 × WT. Noty wynikają z mierzalnych parametrów skoku plus seedowany rozrzut.
 - Partner AI (`src/ai/partner.ts`): ta sama fizyka, wejścia z bota z „osobowością” (tempo, rozrzut, nawyki otwarcia i ripu).
@@ -75,7 +76,7 @@ Rozdzielczość zależy od okna: gra wybiera całkowitą liczbę pikseli urządz
 
 Font to stała bitmapa 8×8 z Press Start 2P (`src/render/fontAtlas.ts`, generowana przez `node scripts/font-atlas.mjs`), więc tekst wygląda tak samo w każdej przeglądarce i systemie.
 
-Wszystko inne generowane w kodzie: paleta 32 kolorów (`src/render/palette.ts`), sprite'y z map pikseli (`src/render/sprites.ts`, z nazwami klatek gotowymi pod atlas Aseprite: `ASEPRITE_ATLAS` w `src/config.ts`), efekty ZzFX, muzyka z własnego sekwencera chiptune, szum publiczności z filtrowanego szumu (słyszalny tylko na hali).
+Wszystko inne generowane w kodzie: paleta 32 kolorów (`src/render/palette.ts`), sprite'y z map pikseli (`src/render/sprites.ts`, z nazwami klatek gotowymi pod atlas Aseprite: `ASEPRITE_ATLAS` w `src/config.ts`), efekty ZzFX, muzyka 16-bit z własnego syntezatora (`src/audio/music.ts`, utwory w `src/audio/songs.ts`: lead z echem, slap-bas, dęciaki, perkusja, pogłos; ściszana w trakcie skoku), szum publiczności z filtrowanego szumu (słyszalny tylko na hali).
 
 ## Prawa
 

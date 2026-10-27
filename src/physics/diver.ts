@@ -53,6 +53,13 @@ export const SAVE_DEG = 4;
 export const FLAT_DEG = 40;
 export const LINE_GREEN_DEG = 5;
 export const ASSIST_SWITCH = 0.14;
+/** water drag (1/m): a clean, lined-up entry and a body moving sideways */
+export const WATER_K_CLEAN = 0.35;
+export const WATER_K_FLAT = 3.5;
+/** linear water drag (1/s) and net upward push under water (m/s²) */
+const WATER_C = 1.0;
+const WATER_LIFT = 0.8;
+const POOL_DEPTH = 5;
 /** how far ←/→ move the arms in flight (rad): arms down spin faster, arms up slower */
 export const TRIM_ARMS = 1.6;
 const ASSIST_ARMS_LOW = 0.02;
@@ -710,6 +717,12 @@ export class DiverSim {
     e.splash = splashSize(e);
   }
 
+  /** drag of the entry itself: a perfect rip cuts the cleanest hole */
+  private waterK(e: EntryResult): number {
+    const rip = e.rip === 'PERFECT' ? 0.85 : e.rip === 'GOOD' ? 1 : 1.3;
+    return WATER_K_CLEAN * rip + (e.tuckEntry ? 1.2 : 0);
+  }
+
   private stepWater(pressed: number): void {
     const e = this.entry!;
     // a press shortly after contact still counts as a (late) rip
@@ -724,18 +737,31 @@ export class DiverSim {
       this.vy -= GRAVITY * DT;
       this.vx *= 0.995;
     } else {
-      const drag = 5;
-      this.vx -= this.vx * drag * DT;
-      this.vy -= this.vy * drag * DT;
-      this.vy += (this.y < -0.4 ? 3.2 : 0.6) * DT;
-      if (this.y > -0.5 && this.vy > 0) this.vy *= 0.9;
-      this.L -= this.L * 4 * DT;
+      // Quadratic water drag along the direction of travel. A body lined up
+      // with its path slices in and goes deep; one moving sideways to its
+      // long axis (flat, or balled up) stops within a few tens of centimetres.
+      const sp = Math.hypot(this.vx, this.vy);
+      const mis = sp > 1e-6 ? Math.sin(this.axisAngle - Math.atan2(this.vx, this.vy)) : 0;
+      const e2 = this.entry!;
+      const k = this.waterK(e2) + (WATER_K_FLAT - WATER_K_CLEAN) * mis * mis;
+      if (sp > 1e-6) {
+        const dv = Math.min(sp, (k * sp * sp + WATER_C * sp) * DT);
+        this.vx -= (this.vx / sp) * dv;
+        this.vy -= (this.vy / sp) * dv;
+      }
+      // buoyancy only a little above gravity: the diver drifts up slowly
+      // once the plunge has stopped
+      if (this.y < -0.3) this.vy += WATER_LIFT * DT;
+      // pool floor
+      if (this.y < -(POOL_DEPTH - 0.8) && this.vy < 0) this.vy *= 0.5;
+      // the water grabs the leading hands: rotation dies out quickly
+      this.L -= this.L * Math.min(1, 14 * DT);
     }
     this.x += this.vx * DT;
     this.y += this.vy * DT;
     this.theta += (this.L / this.inertia) * DT;
     this.stepJoints(this.entryPose);
-    if (this.phaseTime >= 2.2) {
+    if (this.phaseTime >= 2.6) {
       this.phase = 'done';
       this.emit('surface');
     }
